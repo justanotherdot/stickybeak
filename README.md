@@ -1,2 +1,3 @@
 # stickybeak
-A bulletin board oriented for small groups and teams
+
+A file watch (and trigger) tool written in Haskell
