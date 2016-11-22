@@ -1,6 +1,6 @@
 module Main where
 
-import           Lib
+import           OS
 
 main :: IO ()
-main = putStrLn "Main not yet implemented"
+main = print detectOS
