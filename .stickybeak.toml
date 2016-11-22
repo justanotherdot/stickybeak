@@ -1,0 +1,4 @@
+# Example config
+
+firstAction  = [ [ "." ], [" echo 'hello world!'"] ]
+secondAction = [ [ "." ], [" echo 'hello world!'"] ]
