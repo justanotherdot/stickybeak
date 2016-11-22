@@ -1,8 +1,8 @@
 triggers:
-  - name: "test"
-    dirs: [".", "src"]
-    actions: ["echo 'hello world!'"]
+  - name: test case 1
+    dirs: [., src]
+    actions: [echo 'hello world!']
 
-  - name: "minification"
-    dirs: ["."]
-    actions: ["echo 'bloop'"]
+  - name: minification
+    dirs: [.]
+    actions: [echo 'bloop']
