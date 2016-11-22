@@ -4,14 +4,23 @@ module Config
   ( parseConfig
   ) where
 
-import qualified Data.Text.IO    as T
-import           Text.Toml       (parseTomlDoc)
-import           Text.Toml.Types (Table)
+import           Control.Monad (mzero)
+import           Data.Text     (Text)
+import           Data.Yaml     (FromJSON, Value (Object), (.:))
+import qualified Data.Yaml     as Y
 
+data ConfigItem = ConfigItem
+  { _name    :: Text
+  , _dirs    :: [FilePath]
+  , _actions :: [Text]
+  } deriving Show
 
-parseConfig :: FilePath -> IO Table
-parseConfig path = do
-  configText <- T.readFile path
-  case parseTomlDoc "" configText of
-    Right parsedConfig -> return parsedConfig
-    Left  _            -> error "Error parsing config file"
+instance FromJSON ConfigItem where
+  parseJSON (Object v) = ConfigItem     <$>
+                         v .: "name"    <*>
+                         v .: "dirs"    <*>
+                         v .: "actions"
+  parseJSON _ = mzero
+
+parseConfig :: FilePath -> IO (Maybe ConfigItem)
+parseConfig = Y.decodeFile
