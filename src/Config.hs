@@ -5,10 +5,11 @@ module Config
   ( parseConfig
   ) where
 
-import           Control.Monad (mzero)
-import           Data.Text     (Text)
-import           Data.Yaml     (FromJSON, Value (Object), (.:))
-import qualified Data.Yaml     as Y
+import           Control.Applicative ((<$>), (<*>))
+import           Control.Monad       (mzero)
+import           Data.Text           (Text)
+import           Data.Yaml           (FromJSON, Value (Object), (.:))
+import qualified Data.Yaml           as Y
 import           GHC.Generics
 
 data Config = Config { triggers :: [TriggerItem] } deriving (Show, Generic)
