@@ -1,3 +1,8 @@
-name: "test"
-dirs: [".", "src"]
-actions: ["echo 'hello world!'"]
+triggers:
+  - name: "test"
+    dirs: [".", "src"]
+    actions: ["echo 'hello world!'"]
+
+  - name: "minification"
+    dirs: ["."]
+    actions: ["echo 'bloop'"]

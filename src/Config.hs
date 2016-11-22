@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Config
@@ -8,19 +9,24 @@ import           Control.Monad (mzero)
 import           Data.Text     (Text)
 import           Data.Yaml     (FromJSON, Value (Object), (.:))
 import qualified Data.Yaml     as Y
+import           GHC.Generics
 
-data ConfigItem = ConfigItem
+data Config = Config { triggers :: [TriggerItem] } deriving (Show, Generic)
+
+instance FromJSON Config
+
+data TriggerItem = TriggerItem
   { _name    :: Text
   , _dirs    :: [FilePath]
   , _actions :: [Text]
   } deriving Show
 
-instance FromJSON ConfigItem where
-  parseJSON (Object v) = ConfigItem     <$>
+instance FromJSON TriggerItem where
+  parseJSON (Object v) = TriggerItem     <$>
                          v .: "name"    <*>
                          v .: "dirs"    <*>
                          v .: "actions"
   parseJSON _ = mzero
 
-parseConfig :: FilePath -> IO (Maybe ConfigItem)
+parseConfig :: FilePath -> IO (Maybe Config)
 parseConfig = Y.decodeFile
