@@ -3,12 +3,11 @@
 module Main where
 
 import           Config       (parseConfig)
-import           Data.Text    (pack)
-import           Data.Text.IO
-import           Prelude      hiding (putStrLn)
+import qualified Data.Text    as T
+import qualified Data.Text.IO as T
 -- import           OS                  (OS (..), detectOS)
 
 main :: IO ()
 main = do
   config <- parseConfig ".stickybeak.toml"
-  putStrLn (pack (show config))
+  T.putStrLn (T.pack (show config))

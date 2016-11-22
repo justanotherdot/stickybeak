@@ -1,4 +1,5 @@
 # Example config
 
-firstAction  = [ [ "." ], [" echo 'hello world!'"] ]
-secondAction = [ [ "." ], [" echo 'hello world!'"] ]
+[firstAction]
+dirs = ["."]
+actions = ["echo 'hello world!'"]
