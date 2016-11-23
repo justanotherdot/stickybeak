@@ -20,9 +20,9 @@ instance FromJSON Config where
 
 data TriggerItem = TriggerItem
   { name :: !Text
-  , dirs :: ![FilePath]
-  , cmd  :: !FilePath
-  , args :: ![String]
+  , dirs :: ![Text]
+  , cmd  :: !Text
+  , args :: ![Text]
   } deriving Show
 
 instance FromJSON TriggerItem where

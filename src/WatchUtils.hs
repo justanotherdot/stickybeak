@@ -10,6 +10,7 @@ import           Control.Concurrent   (myThreadId, threadDelay)
 import qualified Control.Exception    as E
 import           Control.Monad        (forever, when)
 import           Data.Text            (append)
+import qualified Data.Text            as T
 import qualified Data.Text.IO         as T
 import           System.Exit
 import           System.FSNotify
@@ -30,9 +31,9 @@ setupTrigger :: TriggerItem -> IO ()
 setupTrigger TriggerItem{..} =
   withManager $ \mgr -> do
     when (name /= "") $ T.putStrLn ("Setting up '" `append` name `append` "'")
-    _stopSig <- watchDir mgr path (const True) (const $ runCmd cmd args path)
+    _stopSig <- watchDir mgr path (const True) (const $ runCmd (T.unpack cmd) (fmap T.unpack args) path)
     handleCtrlC
-  where path = head dirs -- !!! XXX TODO Fix this; we should setup a trigger for each specified directory.
+  where path = T.unpack $ head dirs -- !!! XXX TODO Fix this; we should setup a trigger for each specified directory.
 
 -- | Run a command on the current shell instance.
 runCmd :: FilePath -> [FilePath] -> FilePath -> IO ()
