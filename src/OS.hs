@@ -13,7 +13,7 @@ data OS = Linux
 
 detectOS :: OS
 detectOS = case os of
-            "linux"  -> Linux
-            "darwin" -> Mac
+            "linux" -> Linux
+            -- "darwin" -> Mac -- Darwin not yet supported.
             -- "windows" -> Windows -- Windows not yet supported.
-            _        -> Unsupported
+            _       -> Unsupported

@@ -8,12 +8,11 @@ module WatchUtils
 import           Config               (TriggerItem (..))
 import           Control.Concurrent   (myThreadId, threadDelay)
 import qualified Control.Exception    as E
-import           Control.Monad        (forever, when)
-import           Data.Text            (append)
+import           Control.Monad        (forever)
+-- import           Data.Text            (append)
 import qualified Data.Text            as T
-import qualified Data.Text.IO         as T
-import           System.Exit
-import           System.FSNotify
+-- import qualified Data.Text.IO         as T
+import           System.Exit          (ExitCode (..))
 import           System.Posix.Signals
 import           System.Process       (CreateProcess (..), createProcess, proc)
 
@@ -28,12 +27,13 @@ handleCtrlC = do
 
 -- | Given a TriggerItem, setup a trigger provided it's specification.
 setupTrigger :: TriggerItem -> IO ()
-setupTrigger TriggerItem{..} =
-  withManager $ \mgr -> do
-    when (name /= "") $ T.putStrLn ("Setting up '" `append` name `append` "'")
-    _stopSig <- watchDir mgr path (const True) (const $ runCmd (T.unpack cmd) (fmap T.unpack args) path)
-    handleCtrlC
-  where path = T.unpack $ head dirs -- !!! XXX TODO Fix this; we should setup a trigger for each specified directory.
+setupTrigger TriggerItem{..} = do
+  runCmd (T.unpack cmd) (fmap T.unpack args) path
+  handleCtrlC
+  where path = T.unpack $ head dirs
+  -- withManager $ \mgr -> do
+  --   when (name /= "") $ T.putStrLn ("Setting up '" `append` name `append` "'")
+  --   _stopSig <- watchDir mgr path (const True)
 
 -- | Run a command on the current shell instance.
 runCmd :: FilePath -> [FilePath] -> FilePath -> IO ()
