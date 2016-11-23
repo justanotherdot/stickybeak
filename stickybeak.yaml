@@ -1,8 +1,10 @@
 triggers:
   - name: test case 1
     dirs: [., src]
-    actions: [echo 'hello world!']
+    cmd: echo
+    args: ['hello!']
 
   - name: minification
     dirs: [.]
-    actions: [echo 'bloop']
+    cmd: echo
+    args: [bloop]

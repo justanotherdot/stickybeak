@@ -2,17 +2,20 @@
 
 module Main where
 
-import           Config       (parseConfig)
-import qualified Data.Text    as T
+import           Config       (Config (triggers), parseConfig)
 import qualified Data.Text.IO as T
 import           System.Exit  (ExitCode (ExitFailure), exitWith)
+import           WatchUtils   (setupTrigger)
 -- import           OS                  (OS (..), detectOS)
 
 main :: IO ()
-main = do
+main = testTriggers
+
+testTriggers :: IO ()
+testTriggers = do
   config <- parseConfig "stickybeak.yaml"
   case config of
-    Just x  -> T.putStrLn (T.pack $ show x)
-    Nothing -> do
-      T.putStrLn "Could not parse config file"
+    Just config' -> mapM_ setupTrigger (triggers config')
+    Nothing      -> do
+      T.putStrLn "Invalid config file provided"
       exitWith $ ExitFailure 1
