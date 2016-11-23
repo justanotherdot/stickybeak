@@ -3,25 +3,34 @@
 
 module WatchUtils
   ( setupTrigger
+  , subscribe
   ) where
 
 import           Config               (TriggerItem (..))
-import           Control.Concurrent   (myThreadId, threadDelay)
 import qualified Control.Exception    as E
-import           Control.Monad        (forever)
--- import           Data.Text            (append)
 import qualified Data.Text            as T
--- import qualified Data.Text.IO         as T
+import qualified Data.Text.IO         as T
 import           System.Exit          (ExitCode (..))
 import           System.Posix.Signals
 import           System.Process       (CreateProcess (..), createProcess, proc)
 
+import           Control.Concurrent
+import           Control.Monad        (forever)
+import           System.INotify
 
---TODO
--- eventChan :: FilePath -> [EventVariety] -> Chan Event
--- eventChan = undefined
-
--- subscribe?
+subscribe :: [EventVariety] -> FilePath -> IO (Chan Event, WatchDescriptor)
+subscribe _eventTypes path = do
+  inotify <- initINotify
+  eventChan <- newChan
+  -- print inotify
+  wd <- addWatch
+          inotify
+          [Modify]
+          path
+          (writeChan eventChan)
+  -- print wd
+  putStrLn "Listens to your home directory. Hit enter to terminate."
+  return (eventChan, wd)
 
 -- TODO replace this ctrl-c business with daemonization.
 -- | Handle SigInt from Ctrl-C on *nix systems to break out of the loop.
