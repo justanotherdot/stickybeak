@@ -2,17 +2,23 @@
 
 module Main where
 
-import           Config       (parseConfig)
+import           Config       (parseConfig, triggers)
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 import           System.Exit  (ExitCode (ExitFailure), exitWith)
 -- import           OS                  (OS (..), detectOS)
 
+import           WatchUtils
+
 main :: IO ()
-main = do
+main = setupTrigger "." print
+
+spitOutTriggers :: IO ()
+spitOutTriggers = do
   config <- parseConfig "stickybeak.yaml"
-  case config of
-    Just x  -> T.putStrLn (T.pack $ show x)
+  let ts = triggers config
+  case ts of
+    Just _  -> T.putStrLn (T.pack $ show ts)
     Nothing -> do
-      T.putStrLn "Could not parse config file"
+      T.putStrLn "Invalid config file provided"
       exitWith $ ExitFailure 1
