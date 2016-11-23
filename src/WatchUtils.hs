@@ -16,6 +16,13 @@ import           System.Exit          (ExitCode (..))
 import           System.Posix.Signals
 import           System.Process       (CreateProcess (..), createProcess, proc)
 
+
+--TODO
+-- eventChan :: FilePath -> [EventVariety] -> Chan Event
+-- eventChan = undefined
+
+-- subscribe?
+
 -- TODO replace this ctrl-c business with daemonization.
 -- | Handle SigInt from Ctrl-C on *nix systems to break out of the loop.
 --   By default, loops at every second (1e6 microseconds)
