@@ -18,7 +18,7 @@ library
   exposed-modules:     OS
                      , Config
                      , WatchUtils
-  build-depends:       base >= 4.9 && < 5
+  build-depends:       base >= 4.7 && < 5
                      , text
                      , yaml
                      , fsnotify
