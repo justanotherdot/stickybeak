@@ -1,26 +1,41 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module WatchUtils
   ( setupTrigger
   ) where
 
-import           System.FSNotify
-
+import           Config               (TriggerItem (..))
 import           Control.Concurrent   (myThreadId, threadDelay)
-import           System.Exit
-import           System.Posix.Signals
-
 import qualified Control.Exception    as E
-import           Control.Monad        (forever)
+import           Control.Monad        (forever, when)
+import           Data.Text            (append)
+import qualified Data.Text.IO         as T
+import           System.Exit
+import           System.FSNotify
+import           System.Posix.Signals
+import           System.Process       (CreateProcess (..), createProcess, proc)
 
+-- TODO replace this ctrl-c business with daemonization.
+-- | Handle SigInt from Ctrl-C on *nix systems to break out of the loop.
+--   By default, loops at every second (1e6 microseconds)
 handleCtrlC :: IO ()
 handleCtrlC = do
   tid <- myThreadId
   _ <- installHandler keyboardSignal (Catch (E.throwTo tid ExitSuccess)) Nothing
   forever $ threadDelay 1000000
 
-setupTrigger :: FilePath -> Action -> IO ()
-setupTrigger path action =
+-- | Given a TriggerItem, setup a trigger provided it's specification.
+setupTrigger :: TriggerItem -> IO ()
+setupTrigger TriggerItem{..} =
   withManager $ \mgr -> do
-    _stopSig <- watchDir mgr path (const True) action
+    when (name /= "") $ T.putStrLn ("Setting up '" `append` name `append` "'")
+    _stopSig <- watchDir mgr path (const True) (const $ runCmd cmd args path)
     handleCtrlC
+  where path = head dirs -- !!! XXX TODO Fix this; we should setup a trigger for each specified directory.
+
+-- | Run a command on the current shell instance.
+runCmd :: FilePath -> [FilePath] -> FilePath -> IO ()
+runCmd cmd args dir = do
+  _ <- createProcess (proc cmd args){ cwd = Just dir}
+  return ()
