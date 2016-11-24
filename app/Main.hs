@@ -17,13 +17,14 @@ main :: IO ()
 main = do
   (eventChan, wd) <- subscribe [Open] "src"
   _ <- forkIO $ forever (readChan eventChan >>= \evt -> T.putStrLn (T.pack (show evt)))
+  config <- parseConfig "stickybeak.yaml"
+  T.putStrLn (T.pack (show config))
   _ <- getLine
   removeWatch wd
 
-testTriggers :: IO ()
-testTriggers = do
-  config <- parseConfig "stickybeak.yaml"
-  return ()
+-- testTriggers :: IO ()
+-- testTriggers = do
+--   config <- parseConfig "stickybeak.yaml"
   -- case config of
   --   Just config' -> mapM_ setupTrigger (triggers config')
   --   Nothing      -> do

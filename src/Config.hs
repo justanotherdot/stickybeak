@@ -9,7 +9,8 @@ module Config
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Monad       (mzero)
 import           Data.Text           (Text)
-import           Data.Yaml           (FromJSON, Value (Object), (.:))
+import           Data.Yaml           (FromJSON, Value (Object), (.!=), (.:),
+                                      (.:?))
 import qualified Data.Yaml           as Y
 
 data Config = Config { triggers :: ![TriggerItem] } deriving Show
@@ -26,11 +27,11 @@ data TriggerItem = TriggerItem
   } deriving Show
 
 instance FromJSON TriggerItem where
-  parseJSON (Object v) = TriggerItem <$>
-                         v .: "name" <*>
-                         v .: "dirs" <*>
-                         v .: "cmd"  <*>
-                         v .: "args"
+  parseJSON (Object v) = TriggerItem           <$>
+                         v .:? "name" .!= ""   <*>
+                         v .:  "dirs"          <*>
+                         v .:  "cmd"           <*>
+                         v .:? "args" .!= [""]
   parseJSON _          = mzero
 
 parseConfig :: FilePath -> IO (Maybe Config)

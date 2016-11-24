@@ -1,4 +1,8 @@
 triggers:
+  - dirs: [., src]
+    cmd: echo
+    args: ['hello!']
+
   - name: test case 1
     dirs: [., src]
     cmd: echo
