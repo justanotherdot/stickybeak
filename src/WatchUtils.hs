@@ -9,7 +9,7 @@ module WatchUtils
 import           Config               (TriggerItem (..))
 import qualified Control.Exception    as E
 import qualified Data.Text            as T
-import qualified Data.Text.IO         as T
+-- import qualified Data.Text.IO         as T
 import           System.Exit          (ExitCode (..))
 import           System.Posix.Signals
 import           System.Process       (CreateProcess (..), createProcess, proc)
