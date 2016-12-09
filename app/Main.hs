@@ -7,7 +7,6 @@ import qualified Data.Text          as T
 import qualified Data.Text.IO       as T
 -- import           System.Exit        (ExitCode (ExitFailure), exitWith)
 import           WatchUtils         (subscribe)
--- import           OS                  (OS (..), detectOS)
 
 import           Control.Concurrent
 import           Control.Monad      (forever)
