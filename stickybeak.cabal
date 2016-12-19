@@ -24,10 +24,8 @@ library
                      , unix
                      , process
                      , text-format
-  if os(linux)
-    build-depends: hinotify
-  if os(darwin)
-    build-depends: kqueue
+                     , unagi-chan
+                     , hinotify
   default-language:    Haskell2010
   ghc-options:          -Wall -fwarn-tabs
 
