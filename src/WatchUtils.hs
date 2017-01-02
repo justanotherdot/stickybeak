@@ -25,8 +25,8 @@ subscribe eventTypes path = do
 -- | Run a command on the current shell instance.
 runCmd :: FilePath -> [FilePath] -> FilePath -> IO ()
 runCmd cmd args dir = do
-  _ <- createProcess (proc cmd args){ cwd = Just dir}
+  void $ createProcess (proc cmd args){ cwd = Just dir}
   return ()
 
-withEventChan :: Chan Event -> IO () -> IO ()
+withEventChan :: Chan Event -> IO a -> IO ()
 withEventChan chan cmd = void . forkIO . forever $ readChan chan >> cmd
