@@ -27,5 +27,6 @@ subscribe eventTypes path = do
 runCmd :: FilePath -> [FilePath] -> FilePath -> IO ()
 runCmd cmd args cwd' = void $ createProcess (proc cmd args){ cwd = Just cwd' }
 
+-- | Execute cmd on receival of any messages from the provided channel.
 withEventChan :: OutChan Event -> IO a -> IO ()
 withEventChan chan cmd = void . forkIO . forever $ readChan chan >> cmd
