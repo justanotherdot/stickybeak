@@ -4,29 +4,28 @@ module WatchUtils
   , withEventChan
   ) where
 
-import           Control.Concurrent
-import           Control.Monad      (forever, void)
+import           Control.Concurrent                    (forkIO)
+import           Control.Concurrent.Chan.Unagi.Bounded
+import           Control.Monad                         (forever, void)
 import           System.INotify
-import           System.Process     (CreateProcess (..), createProcess, proc)
+import           System.Process                        (CreateProcess (..),
+                                                        createProcess, proc)
+
+maxChanSize :: Int
+maxChanSize = 4096
 
 -- | Subscribe to events, as described by passed eventTypes, on path.
-subscribe :: [EventVariety] -> FilePath -> IO (Chan Event, WatchDescriptor)
+subscribe :: [EventVariety] -> FilePath -> IO (OutChan Event, WatchDescriptor)
 subscribe eventTypes path = do
   inotify <- initINotify
-  eventChan <- newChan
-  wd <- addWatch
-          inotify
-          eventTypes
-          path
-          (writeChan eventChan)
-  putStrLn "Listens to your home directory. Hit enter to terminate."
-  return (eventChan, wd)
+  (inEventChan, outEventChan) <- newChan maxChanSize
+  wd <- addWatch inotify eventTypes path (writeChan inEventChan)
+  putStrLn $ "Listening for changes on path `" ++ path ++ "`"
+  return (outEventChan, wd)
 
 -- | Run a command on the current shell instance.
 runCmd :: FilePath -> [FilePath] -> FilePath -> IO ()
-runCmd cmd args dir = do
-  void $ createProcess (proc cmd args){ cwd = Just dir}
-  return ()
+runCmd cmd args cwd' = void $ createProcess (proc cmd args){ cwd = Just cwd' }
 
-withEventChan :: Chan Event -> IO a -> IO ()
+withEventChan :: OutChan Event -> IO a -> IO ()
 withEventChan chan cmd = void . forkIO . forever $ readChan chan >> cmd
