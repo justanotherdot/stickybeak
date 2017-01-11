@@ -13,19 +13,17 @@ cd stickybeak && stack build
 
 ## Usage
 
-The aim is to have `stickybeak` support a project config or command line args,
-e.g. by calling
+`stickybeak` supports basic command line args in two modes. `watch` mode
+watches a single directory and runs a single task on file changes inside that
+directory.
 
 ```
-stickybeak -m . "stack test"
+stickybeak -d src -c 'stack test'
 ```
 
-on the shell to automatically run `stack test` whenever any files in the current
-directory are modified (NOTE: this specific usage is not set in stone).
 
-Conversely, stickybeak, when finding no command line arguments, will look
-for a `stickybeak.yaml` in the same directory as its running instance. If one is
-found, `stickybeak` will setup triggers as specified, e.g.
+but the aim is to have a second mode `triggers` which allows an explicit or
+implicit config file to be read for multiple triggers.
 
 ```yaml
 triggers:
