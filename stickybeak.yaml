@@ -1,14 +1,9 @@
 triggers:
-  - dirs: [., src]
-    cmd: echo
-    args: ['hello!']
-
-  - name: test case 1
+  - name: Say hello
     dirs: [., src]
     cmd: echo
     args: ['hello!']
 
-  - name: minification
-    dirs: [.]
+  - dirs: [app]
     cmd: echo
-    args: [bloop]
+    args: ['there!']

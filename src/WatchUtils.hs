@@ -1,9 +1,11 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module WatchUtils
-  ( subscribe
-  , runCmd
-  , withEventChan
+  ( watch
+  , watchFromTrigger
   ) where
 
+import           Config                                (TriggerItem (..))
 import           Control.Concurrent                    (forkIO)
 import           Control.Concurrent.Chan.Unagi.Bounded
 import           Control.Monad                         (forever, void)
@@ -30,3 +32,15 @@ runCmd cmd args cwd' = void $ createProcess (proc cmd args){ cwd = Just cwd' }
 -- | Execute cmd on receival of any messages from the provided channel.
 withEventChan :: OutChan Event -> IO a -> IO ()
 withEventChan chan cmd = void . forkIO . forever $ readChan chan >> cmd
+
+-- | Watch a directory and run a command all as concurrent actions.
+watch :: FilePath -> FilePath -> [FilePath] -> IO WatchDescriptor
+watch dir cmd args = do
+  (eventChan, wd) <- subscribe [Modify] dir
+  withEventChan eventChan (runCmd cmd args dir)
+  return wd
+
+-- | Setup a trigger as specified in a TriggerItem
+watchFromTrigger :: TriggerItem -> IO [WatchDescriptor]
+watchFromTrigger TriggerItem{..} =
+  mapM (\dir -> watch dir cmd args) dirs
