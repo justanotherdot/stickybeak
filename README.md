@@ -18,7 +18,7 @@ watches a single directory and runs a single task on file changes inside that
 directory.
 
 ```
-stickybeak -d src -c 'stack test'
+stickybeak watch src 'stack test'
 ```
 
 

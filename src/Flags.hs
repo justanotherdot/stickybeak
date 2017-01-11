@@ -9,8 +9,8 @@ data SBMode = Watch { dir :: Maybe FilePath, cmd :: Maybe FilePath }
             deriving (Show, Data, Typeable)
 
 watch :: SBMode
-watch = Watch{ dir = def &= help "Directory to watch" &= typ "DIR"
-             , cmd = def &= help "Task to run on change events" &= typ "STR"
+watch = Watch{ dir = def &= argPos 0 &= typ "DIR"
+             , cmd = def &= argPos 1 &= typ "CMD"
              } &= help "Watch dir and run cmd on file changes"
 
 triggers :: SBMode
