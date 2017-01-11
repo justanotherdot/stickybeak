@@ -7,8 +7,9 @@ import           Control.Monad    (unless, void, when)
 import           Data.Maybe       (fromMaybe, isNothing)
 import           Flags
 import           System.Directory (doesFileExist)
-import           System.Exit      (die)
+import           System.Exit      (exitFailure)
 import           System.INotify   (removeWatch)
+import           System.IO        (hPutStrLn, stderr)
 import           WatchUtils       (watch, watchFromTrigger)
 
 main :: IO ()
@@ -29,7 +30,7 @@ waitToQuit = putStrLn "ctrl-c to quit" >> void getLine
 watchMode :: Maybe FilePath -> Maybe FilePath -> IO ()
 watchMode dir cmd = do
   cmd' <- case cmd of
-            Nothing -> die "Error: Did not provide a command to run"
+            Nothing -> hPutStrLn stderr "Error: Did not provide a command to run" >> exitFailure
             Just c  -> return $ words c
   let dir' = fromMaybe "." dir
   wd <- watch dir' (head cmd') (tail cmd')
@@ -39,9 +40,9 @@ watchMode dir cmd = do
 triggerMode :: FilePath -> IO ()
 triggerMode path = do
     fileExists <- doesFileExist path
-    unless fileExists (die $ "Error: Could not find " ++ path)
+    unless fileExists (hPutStrLn stderr ("Error: Could not find " ++ path) >> exitFailure)
     conf <- parseConfig path
-    when (isNothing conf) (die $ "Error: Could not parse " ++ path)
+    when (isNothing conf) (hPutStrLn stderr ("Error: Could not parse " ++ path) >> exitFailure)
     let Config{..} = fromMaybe Config{triggers = []} conf
     wds <- mapM watchFromTrigger triggers
     waitToQuit
