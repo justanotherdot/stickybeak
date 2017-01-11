@@ -20,7 +20,7 @@ subscribe eventTypes path = do
   inotify <- initINotify
   (inEventChan, outEventChan) <- newChan maxChanSize
   wd <- addWatch inotify eventTypes path (writeChan inEventChan)
-  putStrLn $ "Listening for changes on path `" ++ path ++ "`"
+  putStrLn $ "Listening for changes on path '" ++ path ++ "'"
   return (outEventChan, wd)
 
 -- | Run a command on the current shell instance.
