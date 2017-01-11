@@ -22,8 +22,9 @@ stickybeak watch src 'stack test'
 ```
 
 
-but the aim is to have a second mode `triggers` which allows an explicit or
-implicit config file to be read for multiple triggers.
+additionally, there is a second mode, `triggers`, which allows an explicit or
+implicit config file to be read for multiple triggers. Given we have the
+following file `stickybeak.yaml` in our current working directory with the contents:
 
 ```yaml
 triggers:
@@ -31,3 +32,6 @@ triggers:
     cmd: stack
     args: [test]
 ```
+
+running `stickybeak triggers` will watch both the current working directory
+and the 'src' directory and run `stack test` whenever changes occur.
