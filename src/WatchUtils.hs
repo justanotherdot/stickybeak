@@ -13,6 +13,7 @@ import           System.INotify
 import           System.Process                        (CreateProcess (..),
                                                         createProcess, proc)
 
+-- | Maximum size for bounded event channels.
 maxChanSize :: Int
 maxChanSize = 4096
 
@@ -42,5 +43,4 @@ watch dir cmd args = do
 
 -- | Setup a trigger as specified in a TriggerItem
 watchFromTrigger :: TriggerItem -> IO [WatchDescriptor]
-watchFromTrigger TriggerItem{..} =
-  mapM (\dir -> watch dir cmd args) dirs
+watchFromTrigger TriggerItem{..} = mapM (\dir -> watch dir cmd args) dirs
