@@ -8,7 +8,6 @@ module Config
 
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Monad       (mzero)
-import           Data.Text           (Text)
 import           Data.Yaml           (FromJSON, Value (Object), (.!=), (.:),
                                       (.:?))
 import qualified Data.Yaml           as Y
@@ -20,15 +19,13 @@ instance FromJSON Config where
   parseJSON _          = mzero
 
 data TriggerItem = TriggerItem
-  { name :: !Text
-  , dirs :: ![FilePath]
+  { dirs :: ![FilePath]
   , cmd  :: !FilePath
   , args :: ![FilePath]
   } deriving Show
 
 instance FromJSON TriggerItem where
   parseJSON (Object v) = TriggerItem           <$>
-                         v .:? "name" .!= ""   <*>
                          v .:  "dirs"          <*>
                          v .:  "cmd"           <*>
                          v .:? "args" .!= [""]

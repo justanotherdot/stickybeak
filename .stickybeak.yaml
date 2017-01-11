@@ -1,6 +1,5 @@
 triggers:
-  - name: Say hello
-    dirs: [., src]
+  - dirs: [., src]
     cmd: echo
     args: ['hello!']
 

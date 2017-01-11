@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Flags (SBMode(..), cmdLineMode) where
+module Flags (SBMode(..), getCmdLine) where
 
 import           System.Console.CmdArgs
 
@@ -23,3 +23,6 @@ cmdLineMode = cmdArgsMode $ modes [triggers &= auto, watch]
                &= help "Watch directories and trigger tasks on changes"
                &= program "stickybeak"
                &= summary "stickybeak v0.1.0"
+
+getCmdLine :: IO SBMode
+getCmdLine = cmdArgsRun cmdLineMode

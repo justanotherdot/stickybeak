@@ -2,37 +2,48 @@
 
 module Main where
 
-import           Config                 (Config (..), parseConfig)
-import           Control.Monad          (void)
-import           Data.Maybe             (fromMaybe)
+import           Config           (Config (..), parseConfig)
+import           Control.Monad    (unless, void, when)
+import           Data.Maybe       (fromMaybe, isNothing)
 import           Flags
-import           System.Console.CmdArgs
-import           System.INotify         (removeWatch)
-import           WatchUtils             (watch, watchFromTrigger)
+import           System.Directory (doesFileExist)
+import           System.Exit      (die)
+import           System.INotify   (removeWatch)
+import           WatchUtils       (watch, watchFromTrigger)
+
+main :: IO ()
+main = stickybeak =<< getCmdLine
+
+stickybeak :: SBMode -> IO ()
+stickybeak mode =
+  case mode of
+    Watch{..}    -> watchMode dir cmd
+    Triggers{..} -> triggerMode (fromMaybe defaultConfig config)
+
+defaultConfig :: String
+defaultConfig = ".stickybeak.yaml"
+
+waitToQuit :: IO ()
+waitToQuit = putStrLn "ctrl-c to quit" >> void getLine
 
 watchMode :: Maybe FilePath -> Maybe FilePath -> IO ()
 watchMode dir cmd = do
-  let cmd' = words (fromMaybe "" cmd)
+  cmd' <- case cmd of
+            Nothing -> die "Error: Did not provide a command to run"
+            Just c  -> return $ words c
   let dir' = fromMaybe "." dir
   wd <- watch dir' (head cmd') (tail cmd')
-  putStrLn "ctrl-c to quit"
-  void getLine
+  waitToQuit
   removeWatch wd
 
 triggerMode :: FilePath -> IO ()
 triggerMode path = do
-  conf <- parseConfig path
-  let Config{..} = fromMaybe Config{triggers = []} conf
-  wds <- mapM watchFromTrigger triggers
-  putStrLn "ctrl-c to quit"
-  void getLine
-  mapM_ (mapM_ removeWatch) wds
-
-main :: IO ()
-main = do
-  x <- cmdArgsRun cmdLineMode
-  case x of
-    Watch{..}    -> watchMode dir cmd
-    Triggers{..} -> case config of
-                      Just path -> triggerMode path
-                      Nothing   -> triggerMode "stickybeak.yaml"
+    fileExists <- doesFileExist path
+    unless fileExists (die $ "Error: Could not find " ++ path)
+    conf <- parseConfig path
+    when (isNothing conf) (die $ "Error: Could not parse " ++ path)
+    let Config{..} = fromMaybe Config{triggers = []} conf
+    wds <- mapM watchFromTrigger triggers
+    waitToQuit
+    removeWatches wds
+  where removeWatches = mapM_ (mapM_ removeWatch)
