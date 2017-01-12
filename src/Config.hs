@@ -4,6 +4,7 @@ module Config
   ( parseConfig
   , Config (..)
   , TriggerItem (..)
+  , defaultConfig
   ) where
 
 import           Control.Applicative ((<$>), (<*>))
@@ -33,3 +34,6 @@ instance FromJSON TriggerItem where
 
 parseConfig :: FilePath -> IO (Maybe Config)
 parseConfig = Y.decodeFile
+
+defaultConfig :: String
+defaultConfig = ".stickybeak.yaml"

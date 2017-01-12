@@ -2,7 +2,7 @@
 
 module Main where
 
-import           Config           (Config (..), parseConfig)
+import           Config           (Config (..), defaultConfig, parseConfig)
 import           Control.Monad    (unless, void, when)
 import           Data.Maybe       (fromMaybe, isNothing)
 import           Flags
@@ -20,9 +20,6 @@ stickybeak mode =
   case mode of
     Watch{..}    -> watchMode dir cmd
     Triggers{..} -> triggerMode (fromMaybe defaultConfig config)
-
-defaultConfig :: String
-defaultConfig = ".stickybeak.yaml"
 
 waitToQuit :: IO ()
 waitToQuit = putStrLn "ctrl-c to quit" >> void getLine
