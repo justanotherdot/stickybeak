@@ -9,7 +9,7 @@ import           Error            (exitFailureMsg)
 import           Flags
 import           System.Directory (doesDirectoryExist, doesFileExist,
                                    listDirectory)
-import           System.FilePath  ((</>), takeBaseName)
+import           System.FilePath  (takeBaseName, (</>))
 import           System.INotify   (removeWatch)
 import           WatchUtils       (watch, watchFromTrigger)
 
