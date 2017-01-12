@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module StickyBeak (stickybeak) where
+module StickyBeak (stickybeak, subDirectories) where
 
 import           Config           (Config (..), defaultConfig, parseConfig)
 import           Control.Monad    (unless, void, when)
@@ -9,6 +9,7 @@ import           Error            (exitFailureMsg)
 import           Flags
 import           System.Directory (doesDirectoryExist, doesFileExist,
                                    listDirectory)
+import           System.FilePath  ((</>), takeBaseName)
 import           System.INotify   (removeWatch)
 import           WatchUtils       (watch, watchFromTrigger)
 
@@ -37,24 +38,24 @@ watchMode dir cmd = do
   waitToQuit
   removeWatch wd
 
--- -- | Return a list of all subdirectories (including the given directory)
--- subDirectories :: FilePath -> IO [FilePath]
--- subDirectories dir = do
---   isDir <- doesDirectoryExist dir
---   if isDir
---     then do
---       es <- listDirectory dir
---
---     else return []
---
--- watchModeRec :: Maybe FilePath -> Maybe FilePath -> IO ()
--- watchModeRec dir cmd = do
---     (dir', cmd') <- checkWatchModeArgs dir cmd
---     subDirs <- subDirectories dir'
---     wds <- traverse (\d -> watch d (head cmd') (tail cmd')) subDirs
---     waitToQuit
---     removeWatches wds
---   where removeWatches = mapM_ removeWatch
+subDirectories :: FilePath -> IO [FilePath]
+subDirectories dir = do
+  isDir <- doesDirectoryExist dir
+  if isDir
+    then do
+      es <- fmap (dir</>) <$> listDirectory dir
+      ds <- mapM subDirectories es
+      return (takeBaseName dir : concat ds)
+    else return []
+
+watchModeRec :: Maybe FilePath -> Maybe FilePath -> IO ()
+watchModeRec dir cmd = do
+    (dir', cmd') <- checkWatchModeArgs dir cmd
+    subDirs <- subDirectories dir'
+    wds <- traverse (\d -> watch d (head cmd') (tail cmd')) subDirs
+    waitToQuit
+    removeWatches wds
+  where removeWatches = mapM_ removeWatch
 
 triggerMode :: FilePath -> IO ()
 triggerMode path = do
