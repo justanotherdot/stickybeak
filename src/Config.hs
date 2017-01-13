@@ -20,7 +20,6 @@ instance FromJSON Config where
 data TriggerItem = TriggerItem
   { dirs      :: ![FilePath]
   , cmd       :: !FilePath
-  , args      :: ![FilePath]
   , recursive :: !Bool
   } deriving Show
 
@@ -28,7 +27,6 @@ instance FromJSON TriggerItem where
   parseJSON (Object v) = TriggerItem           <$>
                          v .:  "dirs"          <*>
                          v .:  "cmd"           <*>
-                         v .:? "args" .!= [""] <*>
                          v .:? "recursive" .!= False
   parseJSON _          = mzero
 

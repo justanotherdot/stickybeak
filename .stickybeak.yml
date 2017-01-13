@@ -1,9 +1,7 @@
 triggers:
   - dirs: [., src, app]
-    cmd: echo
-    args: ['hello ... ']
+    cmd: echo hello from general
 
   - dirs: [test]
-    cmd: echo
-    args: ['there!']
+    cmd: echo hello there from test
     recursive: true

@@ -25,13 +25,12 @@ for multiple triggers. Config files have the format
 
 ```yaml
 triggers:
-  - name: Tests
-    dirs: [., src]
-    cmd: stack
-    args: [test]
+  - dirs: [., src]
+    cmd: stack test
+    recursive: true
 ```
 
-Which will set up a single set of triggers running `stack test` across "." and
-"src" named "Tests". `stickybeak triggers` will search for a ".stickybeak.yaml"
-file in the current working directory whereas `stickbeak triggers -c PATH`
-will use the config located at PATH.
+The above config would set up triggers on the current working directoy,  the
+'src' path, and all subdirectories below each. On file changes, `stack test`
+will be run. One can specify a different `.stickybeak.yml` file by runnig
+stickybeak as `stickybeak triggers -c 'some/other/config.yml'`
