@@ -9,7 +9,7 @@ import           Error            (exitFailureMsg)
 import           Flags
 import           System.Directory (doesFileExist)
 import           System.INotify   (removeWatch)
-import           WatchUtils       (watch, watchFromTrigger, watchRec)
+import           WatchUtils       (watchFromTrigger, watchWith, watchWithRec)
 
 stickybeak :: IO ()
 stickybeak = do
@@ -21,29 +21,28 @@ stickybeak = do
     Triggers{..} -> triggerMode (fromMaybe defaultConfig config)
 
 waitToQuit :: IO ()
-waitToQuit = putStrLn "ctrl-c to quit" >> void getLine
+waitToQuit = do
+    putStrLn "hit enter to quit"
+    void getLine
 
-checkWatchModeArgs :: Maybe FilePath
-                   -> Maybe FilePath
-                   -> IO (FilePath, String, [String])
-checkWatchModeArgs dir cmd = do
+checkForCmd :: Maybe FilePath -> IO (FilePath, [FilePath])
+checkForCmd cmd = do
   cmd' <- case cmd of
             Nothing -> exitFailureMsg "Error: Did not provide a command to run"
             Just c  -> return $ words c
-  let dir' = fromMaybe "." dir
-  return (dir', head cmd', tail cmd')
+  return (head cmd', tail cmd')
 
-watchMode :: Maybe FilePath -> Maybe FilePath -> IO ()
+watchMode :: FilePath -> Maybe FilePath -> IO ()
 watchMode dir cmd = do
-  (dir', cmd', cmdArgs') <- checkWatchModeArgs dir cmd
-  wd <- watch dir' cmd' cmdArgs'
+  (cmd', cmdArgs') <- checkForCmd cmd
+  wd <- watchWith cmd' cmdArgs' dir
   waitToQuit
   removeWatch wd
 
-watchModeRec :: Maybe FilePath -> Maybe FilePath -> IO ()
+watchModeRec :: FilePath -> Maybe FilePath -> IO ()
 watchModeRec dir cmd = do
-    (dir', cmd', cmdArgs') <- checkWatchModeArgs dir cmd
-    wds <- watchRec dir' cmd' cmdArgs'
+    (cmd', cmdArgs') <- checkForCmd cmd
+    wds <- watchWithRec cmd' cmdArgs' dir
     waitToQuit
     removeWatches wds
   where removeWatches = mapM_ removeWatch

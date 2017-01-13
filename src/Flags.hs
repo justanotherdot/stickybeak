@@ -4,7 +4,7 @@ module Flags (SBMode(..), getCmdLine) where
 
 import           System.Console.CmdArgs
 
-data SBMode = Watch { dir       :: Maybe FilePath
+data SBMode = Watch { dir       :: FilePath
                     , cmd       :: Maybe FilePath
                     , recursive :: Bool
                     }
@@ -12,7 +12,7 @@ data SBMode = Watch { dir       :: Maybe FilePath
             deriving (Show, Data, Typeable)
 
 watch :: SBMode
-watch = Watch{ dir = def &= help "Directory to watch" &= typ "DIR"
+watch = Watch{ dir = "." &= help "Directory to watch" &= typ "DIR"
              , cmd = def &= help "Command to run on file changes" &= typ "CMD"
              , recursive = def &= help "Watch subdirectories, as well."
              } &= help "Watch dir and run cmd on file changes"
