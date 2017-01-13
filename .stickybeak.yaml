@@ -1,8 +1,0 @@
-triggers:
-  - dirs: [., src]
-    cmd: echo
-    args: ['hello!']
-
-  - dirs: [app]
-    cmd: echo
-    args: ['there!']

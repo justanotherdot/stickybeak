@@ -7,11 +7,9 @@ module Config
   , defaultConfig
   ) where
 
-import           Control.Applicative ((<$>), (<*>))
-import           Control.Monad       (mzero)
-import           Data.Yaml           (FromJSON, Value (Object), (.!=), (.:),
-                                      (.:?))
-import qualified Data.Yaml           as Y
+import           Control.Monad (mzero)
+import           Data.Yaml     (FromJSON, Value (Object), (.!=), (.:), (.:?))
+import qualified Data.Yaml     as Y
 
 data Config = Config { triggers :: ![TriggerItem] } deriving Show
 
@@ -20,20 +18,22 @@ instance FromJSON Config where
   parseJSON _          = mzero
 
 data TriggerItem = TriggerItem
-  { dirs :: ![FilePath]
-  , cmd  :: !FilePath
-  , args :: ![FilePath]
+  { dirs      :: ![FilePath]
+  , cmd       :: !FilePath
+  , args      :: ![FilePath]
+  , recursive :: !Bool
   } deriving Show
 
 instance FromJSON TriggerItem where
   parseJSON (Object v) = TriggerItem           <$>
                          v .:  "dirs"          <*>
                          v .:  "cmd"           <*>
-                         v .:? "args" .!= [""]
+                         v .:? "args" .!= [""] <*>
+                         v .:? "recursive" .!= False
   parseJSON _          = mzero
 
 parseConfig :: FilePath -> IO (Maybe Config)
 parseConfig = Y.decodeFile
 
 defaultConfig :: String
-defaultConfig = ".stickybeak.yaml"
+defaultConfig = ".stickybeak.yml"
