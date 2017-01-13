@@ -15,9 +15,7 @@ stickybeak :: IO ()
 stickybeak = do
   mode <- getCmdLine
   case mode of
-    Watch{..}    -> if recursive
-                      then watchModeRec dir cmd
-                      else watchMode dir cmd
+    Watch{..}    -> watchMode dir cmd recursive
     Triggers{..} -> triggerMode (fromMaybe defaultConfig config)
 
 waitToQuit :: IO ()
@@ -32,17 +30,12 @@ checkForCmd cmd = do
             Just c  -> return $ words c
   return (head cmd', tail cmd')
 
-watchMode :: FilePath -> Maybe FilePath -> IO ()
-watchMode dir cmd = do
-  (cmd', cmdArgs') <- checkForCmd cmd
-  wd <- watchWith cmd' cmdArgs' dir
-  waitToQuit
-  removeWatch wd
-
-watchModeRec :: FilePath -> Maybe FilePath -> IO ()
-watchModeRec dir cmd = do
+watchMode :: FilePath -> Maybe FilePath -> Bool -> IO ()
+watchMode dir cmd rec = do
     (cmd', cmdArgs') <- checkForCmd cmd
-    wds <- watchWithRec cmd' cmdArgs' dir
+    wds <- if rec
+            then watchWithRec cmd' cmdArgs' dir
+            else (:[]) <$> watchWith cmd' cmdArgs' dir
     waitToQuit
     removeWatches wds
   where removeWatches = mapM_ removeWatch
