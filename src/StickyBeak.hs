@@ -23,18 +23,18 @@ stickybeak = do
 waitToQuit :: IO ()
 waitToQuit = putStrLn "ctrl-c to quit" >> void getLine
 
-checkWatchModeArgs :: Maybe FilePath -> Maybe FilePath -> IO (FilePath, [String])
+checkWatchModeArgs :: Maybe FilePath -> Maybe FilePath -> IO (FilePath, String, [String])
 checkWatchModeArgs dir cmd = do
   cmd' <- case cmd of
             Nothing -> exitFailureMsg "Error: Did not provide a command to run"
             Just c  -> return $ words c
   let dir' = fromMaybe "." dir
-  return (dir', cmd')
+  return (dir', head cmd', tail cmd')
 
 watchMode :: Maybe FilePath -> Maybe FilePath -> IO ()
 watchMode dir cmd = do
-  (dir', cmd') <- checkWatchModeArgs dir cmd
-  wd <- watch dir' (head cmd') (tail cmd')
+  (dir', cmd', args) <- checkWatchModeArgs dir cmd
+  wd <- watch dir' cmd' args
   waitToQuit
   removeWatch wd
 
@@ -50,9 +50,9 @@ subDirectories dir = do
 
 watchModeRec :: Maybe FilePath -> Maybe FilePath -> IO ()
 watchModeRec dir cmd = do
-    (dir', cmd') <- checkWatchModeArgs dir cmd
+    (dir', cmd', args) <- checkWatchModeArgs dir cmd
     subDirs <- subDirectories dir'
-    wds <- traverse (\d -> watch d (head cmd') (tail cmd')) subDirs
+    wds <- traverse (\d -> watch d cmd' args) subDirs
     waitToQuit
     removeWatches wds
   where removeWatches = mapM_ removeWatch

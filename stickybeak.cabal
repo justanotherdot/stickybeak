@@ -28,7 +28,7 @@ library
                      , unagi-chan
                      , hinotify
                      , cmdargs
-                     , directory >= 1.2.5
+                     , directory
                      , filepath
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-tabs
