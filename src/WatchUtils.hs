@@ -60,8 +60,6 @@ watchFromTrigger TriggerItem{..} =
     if recursive
       then concat <$> mapM (watchWithRec cmd) dirs
       else mapM (watchWith cmd) dirs
-  {-where (cmd', cmdArgs') = let cs = words cmd-}
-                           {-in  (head cs, tail cs)-}
 
 subDirectories :: FilePath -> IO [FilePath]
 subDirectories dir = do
