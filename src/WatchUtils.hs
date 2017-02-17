@@ -15,7 +15,7 @@ import           System.Directory                      (doesDirectoryExist,
 import           System.FilePath                       ((</>))
 import           System.INotify
 import           System.Process                        (CreateProcess (..),
-                                                        createProcess, proc)
+                                                        createProcess, shell)
 
 -- | Maximum size for bounded event channels.
 maxChanSize :: Int
@@ -31,8 +31,9 @@ subscribe eventTypes path = do
   return (outEventChan, wd)
 
 -- | Run a command on the current shell instance.
-runCmd :: FilePath -> [FilePath] -> FilePath -> IO ()
-runCmd cmd args path = void $ createProcess (proc cmd args){ cwd = Just path }
+-- always runs said command in the same directory that `stickybeak` was run.
+runCmd :: FilePath -> IO ()
+runCmd cmd = void $ createProcess $ shell cmd
 
 -- | Execute cmd on receival of any messages from the provided channel.
 withEventChan :: OutChan Event -> IO a -> IO ()
@@ -40,27 +41,27 @@ withEventChan chan cmd = void . forkIO . forever $ readChan chan >> cmd
 
 -- | Watch a directory and run a command all as concurrent actions.
 -- returns the WatchDescriptor for later removal.
-watchWith :: FilePath -> [FilePath] -> FilePath -> IO WatchDescriptor
-watchWith cmd args dir = do
+watchWith :: FilePath -> FilePath -> IO WatchDescriptor
+watchWith cmd dir = do
   (eventChan, wd) <- subscribe [Modify] dir
-  withEventChan eventChan (runCmd cmd args dir)
+  withEventChan eventChan $ runCmd cmd
   return wd
 
 -- | Watch all non-hidden subdirectories in addition to dir.
-watchWithRec :: FilePath -> [FilePath] -> FilePath -> IO [WatchDescriptor]
-watchWithRec cmd args dir = do
+watchWithRec :: FilePath -> FilePath -> IO [WatchDescriptor]
+watchWithRec cmd dir = do
     subDirs <- subDirectories dir
-    mapM (watchWith cmd args) (filter (not . hidden) subDirs)
+    mapM (watchWith cmd) (filter (not . hidden) subDirs)
   where hidden path = head path == '.' && length path > 1
 
 -- | Setup a trigger as specified in a TriggerItem
 watchFromTrigger :: TriggerItem -> IO [WatchDescriptor]
 watchFromTrigger TriggerItem{..} =
     if recursive
-      then concat <$> mapM (watchWithRec cmd' cmdArgs') dirs
-      else mapM (watchWith cmd' cmdArgs') dirs
-  where (cmd', cmdArgs') = let cs = words cmd
-                           in  (head cs, tail cs)
+      then concat <$> mapM (watchWithRec cmd) dirs
+      else mapM (watchWith cmd) dirs
+  {-where (cmd', cmdArgs') = let cs = words cmd-}
+                           {-in  (head cs, tail cs)-}
 
 subDirectories :: FilePath -> IO [FilePath]
 subDirectories dir = do

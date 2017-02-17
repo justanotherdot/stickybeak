@@ -23,19 +23,18 @@ waitToQuit = do
     putStrLn "hit enter to quit"
     void getLine
 
-checkForCmd :: Maybe FilePath -> IO (FilePath, [FilePath])
+checkForCmd :: Maybe FilePath -> IO FilePath
 checkForCmd cmd = do
-  cmd' <- case cmd of
-            Nothing -> exitFailureMsg "Error: Did not provide a command to run"
-            Just c  -> return $ words c
-  return (head cmd', tail cmd')
+  case cmd of
+    Nothing   -> exitFailureMsg "Error: Did not provide a command to run"
+    Just cmd' -> return cmd'
 
 watchMode :: FilePath -> Maybe FilePath -> Bool -> IO ()
 watchMode dir cmd rec = do
-    (cmd', cmdArgs') <- checkForCmd cmd
+    cmd' <- checkForCmd cmd
     wds <- if rec
-            then watchWithRec cmd' cmdArgs' dir
-            else (:[]) <$> watchWith cmd' cmdArgs' dir
+            then watchWithRec cmd' dir
+            else (:[]) <$> watchWith cmd' dir
     waitToQuit
     removeWatches wds
   where removeWatches = mapM_ removeWatch
