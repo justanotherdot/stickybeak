@@ -16,10 +16,7 @@ stickybeak :: IO ()
 stickybeak = do
   mode <- getCmdLine
   case mode of
-    Watch{..}    -> do
-      cmd' <- checkForCmd (Just cmd)
-      print cmd'
-      watchMode dir cmd' recursive
+    Watch{..}    -> watchMode dir (unwords cmd) recursive
     Triggers{..} -> triggerMode (fromMaybe defaultConfig config)
 
 waitToQuit :: IO ()
@@ -27,17 +24,18 @@ waitToQuit = do
     putStrLn "hit enter to quit"
     void getLine
 
-checkForCmd :: Maybe [FilePath] -> IO FilePath
-checkForCmd cmd = do
+checkForCmd :: String -> IO String
+checkForCmd cmd =
   case cmd of
-    Nothing   -> exitFailureMsg "Error: Did not provide a command to run"
-    Just cmd' -> return $ unwords cmd'
+    ""   -> exitFailureMsg "Error: Did not provide a command to run"
+    cmd' -> return cmd'
 
-watchMode :: FilePath -> FilePath -> Bool -> IO ()
+watchMode :: FilePath -> String -> Bool -> IO ()
 watchMode dir cmd rec = do
+    cmd' <- checkForCmd cmd
     wds <- if rec
-            then watchWithRec cmd dir
-            else (:[]) <$> watchWith cmd dir
+            then watchWithRec cmd' dir
+            else (:[]) <$> watchWith cmd' dir
     waitToQuit
     removeWatches wds
   where removeWatches = mapM_ removeWatch

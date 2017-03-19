@@ -19,7 +19,7 @@ instance FromJSON Config where
 
 data TriggerItem = TriggerItem
   { dirs      :: ![FilePath]
-  , cmd       :: !FilePath
+  , cmd       :: !String
   , recursive :: !Bool
   } deriving Show
 

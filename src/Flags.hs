@@ -5,7 +5,7 @@ module Flags (SBMode(..), getCmdLine) where
 import           System.Console.CmdArgs
 
 data SBMode = Watch { dir       :: FilePath
-                    , cmd       :: [FilePath]
+                    , cmd       :: [String]
                     , recursive :: Bool
                     }
             | Triggers { config :: Maybe FilePath }
