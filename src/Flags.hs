@@ -8,7 +8,7 @@ data SBMode = Watch { dir       :: FilePath
                     , cmd       :: Maybe FilePath
                     , recursive :: Bool
                     }
-            | Triggers { config    :: Maybe FilePath }
+            | Triggers { config :: Maybe FilePath }
             deriving (Show, Data, Typeable)
 
 watch :: SBMode
