@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module StickyBeak (stickybeak) where
@@ -15,7 +16,10 @@ stickybeak :: IO ()
 stickybeak = do
   mode <- getCmdLine
   case mode of
-    Watch{..}    -> watchMode dir cmd recursive
+    Watch{..}    -> do
+      cmd' <- checkForCmd (Just cmd)
+      print cmd'
+      watchMode dir cmd' recursive
     Triggers{..} -> triggerMode (fromMaybe defaultConfig config)
 
 waitToQuit :: IO ()
@@ -23,18 +27,17 @@ waitToQuit = do
     putStrLn "hit enter to quit"
     void getLine
 
-checkForCmd :: Maybe FilePath -> IO FilePath
+checkForCmd :: Maybe [FilePath] -> IO FilePath
 checkForCmd cmd = do
   case cmd of
     Nothing   -> exitFailureMsg "Error: Did not provide a command to run"
-    Just cmd' -> return cmd'
+    Just cmd' -> return $ unwords cmd'
 
-watchMode :: FilePath -> Maybe FilePath -> Bool -> IO ()
+watchMode :: FilePath -> FilePath -> Bool -> IO ()
 watchMode dir cmd rec = do
-    cmd' <- checkForCmd cmd
     wds <- if rec
-            then watchWithRec cmd' dir
-            else (:[]) <$> watchWith cmd' dir
+            then watchWithRec cmd dir
+            else (:[]) <$> watchWith cmd dir
     waitToQuit
     removeWatches wds
   where removeWatches = mapM_ removeWatch

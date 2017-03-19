@@ -5,7 +5,7 @@ module Flags (SBMode(..), getCmdLine) where
 import           System.Console.CmdArgs
 
 data SBMode = Watch { dir       :: FilePath
-                    , cmd       :: Maybe FilePath
+                    , cmd       :: [FilePath]
                     , recursive :: Bool
                     }
             | Triggers { config :: Maybe FilePath }
@@ -13,8 +13,8 @@ data SBMode = Watch { dir       :: FilePath
 
 watch :: SBMode
 watch = Watch{ dir = "." &= help "Directory to watch" &= typ "DIR"
-             , cmd = def &= help "Command to run on file changes" &= typ "CMD"
-             , recursive = def &= help "Watch subdirectories, as well."
+             , cmd = def &= args &= typ "COMMAND"
+             , recursive = def &= help "Watch subdirectories as well."
              } &= help "Watch dir and run cmd on file changes"
 
 triggers :: SBMode
@@ -28,6 +28,8 @@ cmdLineMode = cmdArgsMode $ modes [triggers, watch &= auto]
                &= help "Watch directories and trigger tasks on changes"
                &= program "stickybeak"
                &= summary "stickybeak v0.1.0"
+               &= helpArg [explicit, name "h"]
+               &= noAtExpand
 
 getCmdLine :: IO SBMode
 getCmdLine = cmdArgsRun cmdLineMode
