@@ -24,7 +24,7 @@ triggers = Triggers{ config = def
                    } &= help "Specify triggers from a config file"
 
 cmdLineMode :: Mode (CmdArgs SBMode)
-cmdLineMode = cmdArgsMode $ modes [triggers &= auto, watch]
+cmdLineMode = cmdArgsMode $ modes [triggers, watch &= auto]
                &= help "Watch directories and trigger tasks on changes"
                &= program "stickybeak"
                &= summary "stickybeak v0.1.0"
