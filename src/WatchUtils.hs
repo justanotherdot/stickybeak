@@ -22,9 +22,8 @@ maxChanSize :: Int
 maxChanSize = 4096
 
 -- | Subscribe to events, as described by passed eventTypes, on path.
-subscribe :: [EventVariety] -> FilePath -> IO (OutChan Event, WatchDescriptor)
-subscribe eventTypes path = do
-  inotify <- initINotify
+subscribe :: INotify -> [EventVariety] -> FilePath -> IO (OutChan Event, WatchDescriptor)
+subscribe inotify eventTypes path = do
   (inEventChan, outEventChan) <- newChan maxChanSize
   wd <- addWatch inotify eventTypes path (writeChan inEventChan)
   putStrLn $ "Listening for changes on path '" ++ path ++ "'"
@@ -41,25 +40,25 @@ withEventChan chan cmd = void . forkIO . forever $ readChan chan >> cmd
 
 -- | Watch a directory and run a command all as concurrent actions.
 -- returns the WatchDescriptor for later removal.
-watchWith :: FilePath -> FilePath -> IO WatchDescriptor
-watchWith cmd dir = do
-  (eventChan, wd) <- subscribe [Modify] dir
+watchWith :: INotify -> FilePath -> FilePath -> IO WatchDescriptor
+watchWith inotify cmd dir = do
+  (eventChan, wd) <- subscribe inotify [Modify] dir
   withEventChan eventChan $ runCmd cmd
   return wd
 
 -- | Watch all non-hidden subdirectories in addition to dir.
-watchWithRec :: FilePath -> FilePath -> IO [WatchDescriptor]
-watchWithRec cmd dir = do
+watchWithRec :: INotify -> FilePath -> FilePath -> IO [WatchDescriptor]
+watchWithRec inotify cmd dir = do
     subDirs <- subDirectories dir
-    mapM (watchWith cmd) (filter (not . hidden) subDirs)
+    mapM (watchWith inotify cmd) (filter (not . hidden) subDirs)
   where hidden path = head path == '.' && length path > 1
 
 -- | Setup a trigger as specified in a TriggerItem
-watchFromTrigger :: TriggerItem -> IO [WatchDescriptor]
-watchFromTrigger TriggerItem{..} =
-    if recursive
-      then concat <$> mapM (watchWithRec cmd) dirs
-      else mapM (watchWith cmd) dirs
+watchFromTrigger :: INotify -> TriggerItem -> IO [WatchDescriptor]
+watchFromTrigger inotify TriggerItem{..} =
+  if recursive
+     then concat <$> mapM (watchWithRec inotify cmd) dirs
+     else mapM (watchWith inotify cmd) dirs
 
 subDirectories :: FilePath -> IO [FilePath]
 subDirectories dir = do
