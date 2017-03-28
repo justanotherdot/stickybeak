@@ -14,8 +14,7 @@ import           System.Directory                      (doesDirectoryExist,
                                                         listDirectory)
 import           System.FilePath                       ((</>))
 import           System.INotify
-import           System.Process                        (CreateProcess (..),
-                                                        createProcess, shell)
+import           System.Process                        (createProcess, shell)
 
 -- | Maximum size for bounded event channels.
 maxChanSize :: Int
@@ -42,7 +41,7 @@ withEventChan chan cmd = void . forkIO . forever $ readChan chan >> cmd
 -- returns the WatchDescriptor for later removal.
 watchWith :: INotify -> FilePath -> FilePath -> IO WatchDescriptor
 watchWith inotify cmd dir = do
-  (eventChan, wd) <- subscribe inotify [Modify] dir
+  (eventChan, wd) <- subscribe inotify [CloseWrite] dir
   withEventChan eventChan $ runCmd cmd
   return wd
 
