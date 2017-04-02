@@ -9,17 +9,15 @@ import           Data.Maybe       (fromMaybe, isNothing)
 import           Error            (exitFailureMsg)
 import           Flags
 import           System.Directory (doesFileExist)
-import           System.INotify   (removeWatch)
-import           System.INotify
+import           System.INotify   (INotify, removeWatch, withINotify)
 import           WatchUtils       (watchFromTrigger, watchWith, watchWithRec)
 
 stickybeak :: IO ()
 stickybeak = do
-  inotify <- initINotify
-  mode <- getCmdLine
-  case mode of
-    Watch{..}    -> watchMode inotify dir (unwords cmd) recursive
-    Triggers{..} -> triggerMode inotify (fromMaybe defaultConfig config)
+    mode <- getCmdLine
+    case mode of
+        Watch{..}    -> withINotify (watchMode dir (unwords cmd) recursive)
+        Triggers{..} -> withINotify (triggerMode (fromMaybe defaultConfig config))
 
 waitToQuit :: IO ()
 waitToQuit = do
@@ -32,8 +30,8 @@ checkForCmd cmd =
     ""   -> exitFailureMsg "Error: Did not provide a command to run"
     cmd' -> return cmd'
 
-watchMode :: INotify -> FilePath -> String -> Bool -> IO ()
-watchMode inotify dir cmd rec = do
+watchMode :: FilePath -> String -> Bool -> INotify -> IO ()
+watchMode dir cmd rec inotify = do
     cmd' <- checkForCmd cmd
     wds <- if rec
               then watchWithRec inotify cmd' dir
@@ -42,8 +40,8 @@ watchMode inotify dir cmd rec = do
     removeWatches wds
   where removeWatches = mapM_ removeWatch
 
-triggerMode :: INotify -> FilePath -> IO ()
-triggerMode inotify path = do
+triggerMode :: FilePath -> INotify -> IO ()
+triggerMode path inotify = do
     fileExists <- doesFileExist path
     unless fileExists (exitFailureMsg $ "Error: Could not find " ++ path)
     conf <- parseConfig path
