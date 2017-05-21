@@ -16,26 +16,25 @@ stickybeak :: IO ()
 stickybeak = do
     mode <- getCmdLine
     case mode of
-        Watch{..}    -> withINotify (watchMode dir (unwords cmd) recursive)
-        Triggers{..} -> withINotify (triggerMode (fromMaybe defaultConfig config))
+        Watch{..}    -> withINotify $ singleWatchMode dir (unwords cmd) recursive
+        Triggers{..} -> withINotify $ triggerMode (fromMaybe defaultConfig config)
 
 waitToQuit :: IO ()
 waitToQuit = do
     putStrLn "hit enter to quit"
-    void getLine
+    void getLine -- TODO replace this with a proper ctrl-c handler.
 
 checkForCmd :: String -> IO String
-checkForCmd cmd =
-  case cmd of
+checkForCmd cmd = \case
     ""   -> exitFailureMsg "Error: Did not provide a command to run"
     cmd' -> return cmd'
 
-watchMode :: FilePath -> String -> Bool -> INotify -> IO ()
-watchMode dir cmd rec inotify = do
+singleWatchMode :: FilePath -> String -> Bool -> INotify -> IO ()
+singleWatchMode dir cmd rec inotify = do
     cmd' <- checkForCmd cmd
     wds <- if rec
-              then watchWithRec inotify cmd' dir
-              else (:[]) <$> watchWith inotify cmd' dir
+           then watchWithRec inotify cmd' dir
+           else (:[]) <$> watchWith inotify cmd' dir
     waitToQuit
     removeWatches wds
   where removeWatches = mapM_ removeWatch

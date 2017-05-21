@@ -19,12 +19,18 @@ import           System.Process                        (createProcess, shell)
 -- | Maximum size for bounded event channels.
 maxChanSize :: Int
 maxChanSize = 4096
+-- TODO maybe change this to 1,
+-- and force the thing below to call (blocking) callProcess
 
--- | Subscribe to events, as described by passed eventTypes, on path.
-subscribe :: INotify -> [EventVariety] -> FilePath -> IO (OutChan Event, WatchDescriptor)
+-- | Subscribe to particular event types on the given path
+-- and write to a given channel
+subscribe :: INotify -- ^ The notification object.
+          -> [EventVariety] -- ^ The list of accepted event types
+          -> FilePath -- ^ The patch to watch
+          -> IO (OutChan Event, WatchDescriptor) -- ^ Event channel and watch descriptor used to unsubscribe.
 subscribe inotify eventTypes path = do
   (inEventChan, outEventChan) <- newChan maxChanSize
-  wd <- addWatch inotify eventTypes path (writeChan inEventChan)
+  wd <- addWatch inotify eventTypes path (tryWriteChan inEventChan)
   putStrLn $ "Listening for changes on path '" ++ path ++ "'"
   return (outEventChan, wd)
 
@@ -32,6 +38,7 @@ subscribe inotify eventTypes path = do
 -- always runs said command in the same directory that `stickybeak` was run.
 runCmd :: FilePath -> IO ()
 runCmd cmd = void $ createProcess $ shell cmd
+{- runCmd cmd = callProcess cmd [] -} -- TODO To be used for single watch mode.
 
 -- | Execute cmd on receival of any messages from the provided channel.
 withEventChan :: OutChan Event -> IO a -> IO ()
