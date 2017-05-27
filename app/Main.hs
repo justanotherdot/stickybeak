@@ -1,6 +1,6 @@
 module Main where
 
-import           StickyBeak (stickybeak)
+import           StickyBeak (StickyBeak (..), runIO)
 
 main :: IO ()
-main = stickybeak
+main = putStrLn "Not Implemented"
