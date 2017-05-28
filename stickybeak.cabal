@@ -22,7 +22,7 @@ library
                     , unix
                     , process
                     , unagi-chan
-                    , hinotify
+                    -- , hinotify
                     , cmdargs
                     , optparse-applicative
                     , directory

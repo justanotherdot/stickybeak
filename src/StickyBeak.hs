@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE GADTs         #-}
 
 module StickyBeak (runIO, StickyBeak(..)) where
 
@@ -16,6 +17,7 @@ data StickyBeakF f where
   Unsubscribe :: StickyBeakF f
   ExitSuccess :: StickyBeakF f
   ExitFailure :: StickyBeakF f
+  deriving (Show, Functor)
 
 type StickyBeak = Free StickyBeakF
 
