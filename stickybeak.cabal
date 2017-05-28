@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:    StickyBeak
+  exposed-modules:    Stickybeak
                     , WatchUtils
   build-depends:       base >= 4.7 && < 5
                     , text
@@ -45,7 +45,6 @@ test-suite test
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base
-                     , stickybeak
                      , QuickCheck
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   ghc-options:         -Wall -fwarn-tabs

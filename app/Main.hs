@@ -1,4 +1,6 @@
 module Main where
 
+import           Stickybeak (echo, runIO)
+
 main :: IO ()
-main = putStrLn "Not Implemented"
+main = runIO echo
