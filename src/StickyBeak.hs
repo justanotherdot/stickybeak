@@ -13,7 +13,7 @@ import           Control.Monad.Free
 
 data StickyBeakF f where
   CheckArgs   :: StickyBeakF f
-  Subscribe   :: StickyBeakF f
+  Subscribe   :: Job -> FilePath -> StickyBeakF f
   Unsubscribe :: StickyBeakF f
   ExitSuccess :: StickyBeakF f
   ExitFailure :: StickyBeakF f
