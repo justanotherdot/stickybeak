@@ -30,14 +30,17 @@ data StickybeakF next where
 
 type Stickybeak = Free StickybeakF
 
+checkArgs :: Stickybeak r
+checkArgs = liftF CheckArgs
+
+exit :: Stickybeak r
+exit = liftF Exit
+
 unsubscribe :: Job -> Stickybeak ()
 unsubscribe s = liftF $ Unsubscribe s ()
 
 subscribe :: Stickybeak Job
 subscribe = liftF $ Subscribe id
-
-exit :: Stickybeak r
-exit = liftF Exit
 
 runIO :: Stickybeak r -> IO r
 runIO (Free (Subscribe f))     = return (Job ("ic", "oc") "in" "wd") >>= runIO . f
