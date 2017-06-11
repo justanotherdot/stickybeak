@@ -49,6 +49,7 @@ argParser = Args
      <> short 'r'
      <> help "Watch subdirectories recursively" )
 
+
 data StickybeakF next where
   CheckArgs   :: (Args -> next) -> StickybeakF next
   Exit        :: StickybeakF next
@@ -73,7 +74,12 @@ subscribe args = liftF $ Subscribe args id
 runIO :: Stickybeak r -> IO r
 runIO (Free (Subscribe args f))  = return (Job ("ic", "oc") "in" "wd") >>= runIO . f
 runIO (Free (Unsubscribe job n)) = print job >> runIO n
-runIO (Free (CheckArgs f))       = return (Args "blah" "blah" True) >>= runIO . f
+runIO (Free (CheckArgs f))       = execParser opts >>= runIO . f
+  where
+    opts = info (argParser <**> helper)
+      ( fullDesc
+     <> progDesc "Watch TARGET and run COMMAND on changes"
+     <> header "stickybeak" )
 runIO (Free Exit)                = exitSuccess
 runIO (Pure r)                   = return r
 
