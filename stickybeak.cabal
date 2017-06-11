@@ -13,16 +13,15 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  hs-source-dirs:      src
+  hs-source-dirs:     src
   exposed-modules:    Stickybeak
-                    -- , WatchUtils
-  build-depends:       base >= 4.7 && < 5
+  build-depends:      base >= 4.7 && < 5
                     , text
                     , yaml
                     , unix
                     , process
                     , unagi-chan
-                    -- , hinotify
+                    , hinotify
                     , optparse-applicative
                     , directory
                     , filepath
@@ -45,6 +44,7 @@ test-suite test
   main-is:             Spec.hs
   build-depends:       base
                      , QuickCheck
+                     , stickybeak
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   ghc-options:         -Wall -fwarn-tabs
   default-language:    Haskell2010
