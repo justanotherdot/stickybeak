@@ -28,8 +28,8 @@ import           System.INotify                        (Event,
                                                         WatchDescriptor,
                                                         addWatch, initINotify,
                                                         removeWatch)
-import           System.Process                        (spawnCommand,
-                                                        waitForProcess)
+import           System.Process                        (readCreateProcess,
+                                                        shell)
 
 data Job = Job
     { inChan  :: InChan Event
@@ -37,9 +37,6 @@ data Job = Job
     , inotify :: INotify
     -- Might need some kind of collection to keep track of WatchDescriptors.
     }
-
-instance Show Job where
-  show _ = "Job (ic, oc) stream"
 
 data Args = Args
   { target    :: String
@@ -68,7 +65,7 @@ progInfo = info (progArgs <**> helper)
 
 subscribe :: Job -> Args -> IO Job
 subscribe Job{..} Args{..} = do
-  wd <- addWatch inotify [Modify] target (\evt -> void (tryWriteChan inChan evt))
+  wd <- addWatch inotify [CloseWrite] target (\evt -> void (tryWriteChan inChan evt))
   return $ Job inChan outChan inotify
 
 newJob :: IO Job
@@ -81,11 +78,8 @@ newJob = do
 -- instead of using `getLine`
 newWorker :: Job -> Args -> IO ThreadId
 newWorker Job{..} Args{..} = forkIO $ forever cmd
-  where cmd :: IO ()
-        cmd = do
-          _ <- readChan outChan
-          ph <- spawnCommand command
-          void $ waitForProcess ph
+  where cmd = readChan outChan >> readCreateProcess (shell command) "" >>= putStr
+  {- where cmd = readChan outChan >>= print -}
 
 stickybeak :: IO ()
 stickybeak = do
