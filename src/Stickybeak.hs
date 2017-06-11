@@ -1,11 +1,13 @@
 {-# LANGUAGE DeriveFunctor    #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs            #-}
+{-# LANGUAGE RecordWildCards  #-}
 
 module Stickybeak
   ( stickybeak
   , runIO
   , runPure
+  -- XXX Need to move these into an Internals module!
   , Stickybeak
   , subscribe
   , unsubscribe
@@ -34,21 +36,16 @@ data Args = Args
 
 argParser :: Parser Args
 argParser = Args
-  <$> strOption
-      ( long "target"
-     <> short 't'
-     <> metavar "TARGET"
+  <$> argument str
+      ( metavar "TARGET"
      <> help "Target to watch" )
-  <*> strOption
-      ( long "command"
-     <> short 'c'
-     <> metavar "COMMAND"
+  <*> argument str
+      ( metavar "COMMAND"
      <> help "Command to run on file changes" )
   <*> switch
       ( long "recursive"
      <> short 'r'
      <> help "Watch subdirectories recursively" )
-
 
 data StickybeakF next where
   CheckArgs   :: (Args -> next) -> StickybeakF next
@@ -72,16 +69,16 @@ subscribe :: Args -> Stickybeak Job
 subscribe args = liftF $ Subscribe args id
 
 runIO :: Stickybeak r -> IO r
-runIO (Free (Subscribe args f))  = return (Job ("ic", "oc") "in" "wd") >>= runIO . f
-runIO (Free (Unsubscribe job n)) = print job >> runIO n
-runIO (Free (CheckArgs f))       = execParser opts >>= runIO . f
+runIO (Free (Subscribe Args{..} f)) = return (Job (target, command) (show recursive) "wd") >>= runIO . f
+runIO (Free (Unsubscribe job n))    = print job >> runIO n
+runIO (Free (CheckArgs f))          = execParser opts >>= runIO . f
   where
     opts = info (argParser <**> helper)
       ( fullDesc
      <> progDesc "Watch TARGET and run COMMAND on changes"
      <> header "stickybeak" )
-runIO (Free Exit)                = exitSuccess
-runIO (Pure r)                   = return r
+runIO (Free Exit)                   = exitSuccess
+runIO (Pure r)                      = return r
 
 runPure :: Stickybeak r -> Either String r
 runPure (Free (Subscribe args n))  = return (Job ("ic", "oc") "in" "wd") >>= runPure . n
