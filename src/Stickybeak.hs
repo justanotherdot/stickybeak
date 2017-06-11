@@ -28,9 +28,12 @@ import           System.INotify                        (Event,
                                                         WatchDescriptor,
                                                         addWatch, initINotify,
                                                         removeWatch)
+import           System.Process                        (spawnCommand,
+                                                        waitForProcess)
 
 data Job = Job
-    { chans   :: (InChan Event, OutChan Event)
+    { inChan  :: InChan Event
+    , outChan :: OutChan Event
     , inotify :: INotify
     -- Might need some kind of collection to keep track of WatchDescriptors.
     }
@@ -65,28 +68,30 @@ progInfo = info (progArgs <**> helper)
 
 subscribe :: Job -> Args -> IO Job
 subscribe Job{..} Args{..} = do
-    wd <- addWatch inotify [Modify] target (\evt -> void (tryWriteChan ic evt))
-    return $ Job chans inotify
-  where
-    (ic, _) = chans
+  wd <- addWatch inotify [Modify] target (\evt -> void (tryWriteChan inChan evt))
+  return $ Job inChan outChan inotify
 
 newJob :: IO Job
 newJob = do
-  chans <- newChan 1
+  (ic, oc) <- newChan 1
   inotify <- initINotify
-  return $ Job chans inotify
+  return $ Job ic oc inotify
 
-newWorker :: Job -> IO ThreadId
-newWorker job = forkIO . forever $ readChan oc >>= print
-  where
-    (_, oc) = chans job
-
+-- TODO change this from forkIO to async, that way we can `cancel`
+-- instead of using `getLine`
+newWorker :: Job -> Args -> IO ThreadId
+newWorker Job{..} Args{..} = forkIO $ forever cmd
+  where cmd :: IO ()
+        cmd = do
+          _ <- readChan outChan
+          ph <- spawnCommand command
+          void $ waitForProcess ph
 
 stickybeak :: IO ()
 stickybeak = do
   args <- execParser progInfo
   job <- newJob
-  worker <- newWorker job
+  worker <- newWorker job args
   subscribe job args
   _ <- getLine
   exitSuccess
