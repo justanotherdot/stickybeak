@@ -1,6 +1,6 @@
 module Main where
 
-import           StickyBeak (stickybeak)
+import           Stickybeak (stickybeak)
 
 main :: IO ()
 main = stickybeak
