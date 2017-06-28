@@ -16,14 +16,16 @@ library
   hs-source-dirs:     src
   exposed-modules:    Stickybeak
   build-depends:      base >= 4.7 && < 5
-                    , text
-                    , unix
-                    , process
-                    , unagi-chan
+                    , async
+                    , containers
+                    , directory
                     , hinotify
                     , optparse-applicative
-                    , directory
-                    , containers
+                    , process
+                    , stm
+                    , text
+                    , time
+                    , unix
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-tabs
 

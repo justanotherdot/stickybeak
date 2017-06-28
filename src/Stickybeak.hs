@@ -1,42 +1,30 @@
-{-# LANGUAGE DeriveFunctor             #-}
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE GADTs                     #-}
-{-# LANGUAGE RecordWildCards           #-}
-
 module Stickybeak
   ( stickybeak
   ) where
 
-import           Control.Concurrent                    (ThreadId, forkIO)
-import           Control.Concurrent.Chan.Unagi.Bounded (InChan, OutChan,
-                                                        newChan, readChan,
-                                                        tryWriteChan)
-import           Control.Monad                         (forever, void)
-import           Data.Semigroup                        ((<>))
-import           Options.Applicative                   (Parser, ParserInfo (..),
-                                                        argument, execParser,
-                                                        fullDesc, header, help,
-                                                        helper, info, long,
-                                                        metavar, progDesc,
-                                                        short, str, switch,
-                                                        (<**>))
-import           System.Exit                           (exitSuccess)
-import           System.INotify                        (Event,
-                                                        EventVariety (..),
-                                                        INotify,
-                                                        WatchDescriptor,
-                                                        addWatch, initINotify,
-                                                        removeWatch)
-import           System.Process                        (readCreateProcess,
-                                                        shell)
+{- import           Control.Concurrent.Async -}
+import           Control.Concurrent.STM
+import           Data.Map.Strict        (Map)
+import qualified Data.Map.Strict        as Map
+import           Data.Semigroup         ((<>))
+import           Data.Time              (UTCTime (..), diffUTCTime,
+                                         getCurrentTime)
+import           Options.Applicative    (Parser, ParserInfo (..), argument,
+                                         execParser, fullDesc, header, help,
+                                         helper, info, long, metavar, progDesc,
+                                         short, str, switch, (<**>))
+import           System.Exit            (exitSuccess)
+import           System.INotify         (EventVariety (..), INotify,
+                                         WatchDescriptor, addWatch, initINotify,
+                                         removeWatch)
+import           System.Process         (ProcessHandle, spawnCommand)
 
-data Job = Job
-    { inChan  :: InChan Event
-    , outChan :: OutChan Event
-    , inotify :: INotify
-    -- Might need some kind of collection to keep track of WatchDescriptors.
-    }
+data Job = Job ProcessHandle UTCTime
+
+instance Show Job where
+  show (Job _ ts) = show ts
+
+type JobMap = Map String Job
 
 data Args = Args
   { target    :: String
@@ -63,29 +51,33 @@ progInfo = info (progArgs <**> helper)
              <> progDesc "Watch TARGET and run COMMAND on changes"
              <> header "stickybeak" )
 
-subscribe :: Job -> Args -> IO Job
-subscribe Job{..} Args{..} = do
-  wd <- addWatch inotify [CloseWrite] target (\evt -> void (tryWriteChan inChan evt))
-  return $ Job inChan outChan inotify
+defaultDebounce :: RealFrac a => a
+defaultDebounce = 0.250
 
-newJob :: IO Job
-newJob = do
-  (ic, oc) <- newChan 1
-  inotify <- initINotify
-  return $ Job ic oc inotify
-
--- TODO change this from forkIO to async, that way we can `cancel`
--- instead of using `getLine`
-newWorker :: Job -> Args -> IO ThreadId
-newWorker Job{..} Args{..} = forkIO $ forever cmd
-  where cmd = readChan outChan >> readCreateProcess (shell command) "" >>= putStr
-  {- where cmd = readChan outChan >>= print -}
+subscribe :: INotify -> TMVar JobMap -> Args -> IO WatchDescriptor
+subscribe inotify jobMap args = addWatch inotify [CloseWrite] (target args) eventHandler
+  where
+    eventHandler _ = do
+      ts <- getCurrentTime
+      (jm, needsUpdate) <- atomically $ do
+        jm' <- takeTMVar jobMap
+        case Map.lookup (command args) jm' of
+          Nothing -> return (jm', True)
+          Just (Job _ ts') -> if diffUTCTime ts ts' > defaultDebounce
+                                 then return (jm', True)
+                                 else return (jm', False)
+      if needsUpdate
+         then do
+           ph <- spawnCommand (command args)
+           atomically $ putTMVar jobMap $ Map.insert (command args) (Job ph ts) jm
+          else atomically $ putTMVar jobMap jm
 
 stickybeak :: IO ()
 stickybeak = do
   args <- execParser progInfo
-  job <- newJob
-  worker <- newWorker job args
-  subscribe job args
+  jobMap <- atomically $ newTMVar Map.empty
+  inotify <- initINotify
+  wd <- subscribe inotify jobMap args
   _ <- getLine
+  removeWatch wd
   exitSuccess
