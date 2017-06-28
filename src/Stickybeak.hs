@@ -62,10 +62,8 @@ subscribe inotify jobMap args = addWatch inotify [CloseWrite] (target args) even
       (jm, needsUpdate) <- atomically $ do
         jm' <- takeTMVar jobMap
         case Map.lookup (command args) jm' of
-          Nothing -> return (jm', True)
-          Just (Job _ ts') -> if diffUTCTime ts ts' > defaultDebounce
-                                 then return (jm', True)
-                                 else return (jm', False)
+          Nothing          -> return (jm', True)
+          Just (Job _ ts') -> return (jm', diffUTCTime ts ts' > defaultDebounce)
       if needsUpdate
          then do
            ph <- spawnCommand (command args)
