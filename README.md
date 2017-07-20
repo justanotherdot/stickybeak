@@ -1,7 +1,7 @@
 # stickybeak
+___Trigger actions on filesystem events___
 
 [![Build Status](https://travis-ci.org/justanotherdot/stickybeak.svg?branch=master)](https://travis-ci.org/justanotherdot/stickybeak)
-___Trigger actions on filesystem events___
 
 ![Closeup of a parrot's feathers](./birds.jpg)
 
