@@ -1,11 +1,9 @@
 # stickybeak
 
-![Closeup of a parrot's feathers](./birds.jpg)
-
-
 [![Build Status](https://travis-ci.org/justanotherdot/stickybeak.svg?branch=master)](https://travis-ci.org/justanotherdot/stickybeak)
+___Trigger actions on filesystem events___
 
-A file watch and trigger tool written in Haskell
+![Closeup of a parrot's feathers](./birds.jpg)
 
 ## Install
 
