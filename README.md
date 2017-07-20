@@ -1,6 +1,6 @@
 # stickybeak
 
-![Two colorful birds](birds.png)
+![Closeup of a parrot's feathers](birds.jpg)
 
 
 [![Build Status](https://travis-ci.org/justanotherdot/stickybeak.svg?branch=master)](https://travis-ci.org/justanotherdot/stickybeak)
