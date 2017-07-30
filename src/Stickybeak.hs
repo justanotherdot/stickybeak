@@ -74,13 +74,14 @@ subscribe inotify jobMap args = addWatch inotify [CloseWrite] (target args) even
 -- Notes:
 --   * Use a map as an accumulator for efficiency.
 --   * Compress the `if-then-else` into just combinators.
-subdirs :: FilePath -> IO [FilePath]
-subdirs dir = do
+--   * Will not ignore hidden directories.
+subdirectories :: FilePath -> IO [FilePath]
+subdirectories dir = do
   isDir <- doesDirectoryExist dir
   if isDir
      then do
-       fs <- fmap (dirSlash <>) <$> listDirectory dir
-       dirs <- fmap concat $ traverse subdirs fs
+       fs <- map (dirSlash <>) <$> listDirectory dir
+       dirs <- concat <$> traverse subdirectories fs
        return $ dir : dirs
      else
        return []
