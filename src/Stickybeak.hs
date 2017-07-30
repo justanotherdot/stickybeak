@@ -1,5 +1,6 @@
 module Stickybeak
   ( stickybeak
+  , subdirectories
   ) where
 
 {- import           Control.Concurrent.Async -}
@@ -80,7 +81,7 @@ subdirectories dir = do
   isDir <- doesDirectoryExist dir
   if isDir
      then do
-       fs <- map (dirSlash <>) <$> listDirectory dir
+       fs <- (map (dirSlash <>) . filter (\x -> head x /= '.')) <$> listDirectory dir
        dirs <- concat <$> traverse subdirectories fs
        return $ dir : dirs
      else
