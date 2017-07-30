@@ -13,6 +13,7 @@ import           Options.Applicative    (Parser, ParserInfo (..), argument,
                                          execParser, fullDesc, header, help,
                                          helper, info, long, metavar, progDesc,
                                          short, str, switch, (<**>))
+import           System.Directory       (doesDirectoryExist, listDirectory)
 import           System.Exit            (exitSuccess)
 import           System.INotify         (EventVariety (..), INotify,
                                          WatchDescriptor, addWatch, initINotify,
@@ -69,6 +70,21 @@ subscribe inotify jobMap args = addWatch inotify [CloseWrite] (target args) even
            ph <- spawnCommand (command args)
            atomically $ putTMVar jobMap $ Map.insert (command args) (Job ph ts) jm
           else atomically $ putTMVar jobMap jm
+
+-- Notes:
+--   * Use a map as an accumulator for efficiency.
+--   * Compress the `if-then-else` into just combinators.
+subdirs :: FilePath -> IO [FilePath]
+subdirs dir = do
+  isDir <- doesDirectoryExist dir
+  if isDir
+     then do
+       fs <- fmap (dirSlash <>) <$> listDirectory dir
+       dirs <- fmap concat $ traverse subdirs fs
+       return $ dir : dirs
+     else
+       return []
+  where dirSlash = dir <> "/"
 
 stickybeak :: IO ()
 stickybeak = do
