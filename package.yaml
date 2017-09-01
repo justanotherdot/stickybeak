@@ -1,0 +1,55 @@
+name: stickybeak
+version: '0.0.4.0'
+synopsis: Watch files and trigger actions.
+description: Please see README.md
+category: Utility
+author: Ryan James Spencer
+maintainer: spencer.ryanjames@gmail.com
+copyright: Copyright (c) 2016 Ryan James Spencer
+license: BSD3
+github: justanotherdot/stickybeak
+ghc-options:
+- -Wall
+- -fwarn-tabs
+- -Wincomplete-uni-patterns
+- -Wincomplete-record-updates
+- -Wmissing-import-lists
+library:
+  source-dirs: src
+  exposed-modules:
+  - Stickybeak
+  dependencies:
+  - base >=4.7 && <5
+  - async
+  - containers
+  - directory
+  - hinotify
+  - optparse-applicative
+  - process
+  - stm
+  - text
+  - time
+  - unix
+executables:
+  stickybeak:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - stickybeak
+tests:
+  test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - QuickCheck
+    - stickybeak
