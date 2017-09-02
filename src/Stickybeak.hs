@@ -57,19 +57,19 @@ defaultDebounce :: RealFrac a => a
 defaultDebounce = 0.250
 
 subscribe :: INotify -> TMVar JobMap -> Args -> IO WatchDescriptor
-subscribe inotify jobMap args = addWatch inotify [CloseWrite] (target args) eventHandler
+subscribe inotify jobMap target command = addWatch inotify [CloseWrite] target eventHandler
   where
     eventHandler _ = do
       ts <- getCurrentTime
       (jm, needsUpdate) <- atomically $ do
         jm' <- takeTMVar jobMap
-        case Map.lookup (command args) jm' of
+        case Map.lookup command jm' of
           Nothing          -> return (jm', True)
           Just (Job _ ts') -> return (jm', diffUTCTime ts ts' > defaultDebounce)
       if needsUpdate
          then do
-           ph <- spawnCommand (command args)
-           atomically $ putTMVar jobMap $ Map.insert (command args) (Job ph ts) jm
+           ph <- spawnCommand command
+           atomically $ putTMVar jobMap $ Map.insert command (Job ph ts) jm
           else atomically $ putTMVar jobMap jm
 
 -- Notes:
@@ -93,7 +93,7 @@ stickybeak = do
   args <- execParser progInfo
   jobMap <- atomically $ newTMVar Map.empty
   inotify <- initINotify
-  wd <- subscribe inotify jobMap args
+  wd <- subscribe inotify jobMap (target args) (command args)
   _ <- getLine
   removeWatch wd
   exitSuccess
