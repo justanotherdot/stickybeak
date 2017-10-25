@@ -1,5 +1,6 @@
 module Stickybeak
   ( stickybeak
+  , subdirectories
   ) where
 
 {- import           Control.Concurrent.Async -}
@@ -13,6 +14,7 @@ import           Options.Applicative    (Parser, ParserInfo (..), argument,
                                          execParser, fullDesc, header, help,
                                          helper, info, long, metavar, progDesc,
                                          short, str, switch, (<**>))
+import           System.Directory       (doesDirectoryExist, listDirectory)
 import           System.Exit            (exitSuccess)
 import           System.INotify         (EventVariety (..), INotify,
                                          WatchDescriptor, addWatch, initINotify,
@@ -54,28 +56,65 @@ progInfo = info (progArgs <**> helper)
 defaultDebounce :: RealFrac a => a
 defaultDebounce = 0.250
 
-subscribe :: INotify -> TMVar JobMap -> Args -> IO WatchDescriptor
-subscribe inotify jobMap args = addWatch inotify [CloseWrite] (target args) eventHandler
+subscribe :: INotify
+          -> TMVar JobMap
+          -> String -- target
+          -> String -- command
+          -> IO WatchDescriptor
+subscribe inotify jobMap tgt cmd = addWatch inotify [CloseWrite] tgt eventHandler
   where
     eventHandler _ = do
       ts <- getCurrentTime
       (jm, needsUpdate) <- atomically $ do
         jm' <- takeTMVar jobMap
-        case Map.lookup (command args) jm' of
+        case Map.lookup cmd jm' of
           Nothing          -> return (jm', True)
           Just (Job _ ts') -> return (jm', diffUTCTime ts ts' > defaultDebounce)
       if needsUpdate
          then do
-           ph <- spawnCommand (command args)
-           atomically $ putTMVar jobMap $ Map.insert (command args) (Job ph ts) jm
-          else atomically $ putTMVar jobMap jm
+           ph <- spawnCommand cmd
+           atomically $ putTMVar jobMap $ Map.insert cmd (Job ph ts) jm
+         else atomically $ putTMVar jobMap jm
+
+-- | Get all the subdirectories of a given directory.
+--
+-- n.b. Will ignore hidden directories and files
+-- but will allow passing "." as an initial arg.
+subdirectories :: FilePath -> IO [FilePath]
+subdirectories dir = do
+    isDir <- doesDirectoryExist dir
+    if isDir
+       then do
+         fs   <- (prefixDir . filter isHidden) <$> listDirectory dir
+         dirs <- concat <$> traverse subdirectories fs
+         return $ dir : dirs
+       else
+         return []
+  where prefixDir = map (\fn -> dir <> "/" <> fn)
+
+        head' xs
+          | null xs   = Nothing
+          | otherwise = let (x:_) = xs
+                         in Just x
+
+        isHidden fn = case head' fn of
+                       Just c  -> c /= '.'
+                       Nothing -> False
 
 stickybeak :: IO ()
 stickybeak = do
   args <- execParser progInfo
   jobMap <- atomically $ newTMVar Map.empty
   inotify <- initINotify
-  wd <- subscribe inotify jobMap args
-  _ <- getLine
-  removeWatch wd
-  exitSuccess
+  if not (recursive args)
+     then do
+       wd <- subscribe inotify jobMap (target args) (command args)
+       _ <- getLine
+       removeWatch wd
+       exitSuccess
+     else do
+       fs  <- subdirectories (target args)
+       wds <- traverse (\fn -> subscribe inotify jobMap fn (command args)) fs
+       _ <- getLine
+       _ <- traverse removeWatch wds
+       exitSuccess
