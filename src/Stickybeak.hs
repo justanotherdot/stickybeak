@@ -113,7 +113,8 @@ stickybeak = do
        removeWatch wd
        exitSuccess
      else do
-       wds <- subscribe inotify jobMap (target args) (command args)
+       fs  <- subdirectories (target args)
+       wds <- traverse (\fn -> subscribe inotify jobMap fn (command args)) fs
        _ <- getLine
-       removeWatch wds
+       _ <- traverse removeWatch wds
        exitSuccess
