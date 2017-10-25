@@ -74,23 +74,32 @@ subscribe inotify jobMap tgt cmd = addWatch inotify [CloseWrite] tgt eventHandle
          then do
            ph <- spawnCommand cmd
            atomically $ putTMVar jobMap $ Map.insert cmd (Job ph ts) jm
-          else atomically $ putTMVar jobMap jm
+         else atomically $ putTMVar jobMap jm
 
--- Notes:
---   * Use a map as an accumulator for efficiency.
---   * Compress the `if-then-else` into just combinators.
---   * Will not ignore hidden directories.
+-- | Get all the subdirectories of a given directory.
+--
+-- n.b. Will ignore hidden directories and files
+-- but will allow passing "." as an initial arg.
 subdirectories :: FilePath -> IO [FilePath]
 subdirectories dir = do
-  isDir <- doesDirectoryExist dir
-  if isDir
-     then do
-       fs <- (map (dirSlash <>) . filter (\x -> head x /= '.')) <$> listDirectory dir
-       dirs <- concat <$> traverse subdirectories fs
-       return $ dir : dirs
-     else
-       return []
-  where dirSlash = dir <> "/"
+    isDir <- doesDirectoryExist dir
+    if isDir
+       then do
+         fs   <- (prefixDir . filter isHidden) <$> listDirectory dir
+         dirs <- concat <$> traverse subdirectories fs
+         return $ dir : dirs
+       else
+         return []
+  where prefixDir = map (\fn -> dir <> "/" <> fn)
+
+        head' xs
+          | null xs   = Nothing
+          | otherwise = let (x:_) = xs
+                         in Just x
+
+        isHidden fn = case head' fn of
+                       Just c  -> c /= '.'
+                       Nothing -> False
 
 stickybeak :: IO ()
 stickybeak = do
@@ -99,8 +108,12 @@ stickybeak = do
   inotify <- initINotify
   if not (recursive args)
      then do
-      wd <- subscribe inotify jobMap (target args) (command args)
-      _ <- getLine
-      removeWatch wd
-      exitSuccess
-     else error "Not Implemented"
+       wd <- subscribe inotify jobMap (target args) (command args)
+       _ <- getLine
+       removeWatch wd
+       exitSuccess
+     else do
+       wds <- subscribe inotify jobMap (target args) (command args)
+       _ <- getLine
+       removeWatch wds
+       exitSuccess
