@@ -19,7 +19,7 @@ import           System.Directory       (doesDirectoryExist, listDirectory)
 import           System.Exit            (exitSuccess)
 import           System.INotify         (EventVariety (..), INotify,
                                          WatchDescriptor, addWatch, initINotify,
-                                         removeWatch)
+                                         removeWatch, killINotify)
 import           System.Process         (ProcessHandle, spawnCommand)
 import qualified System.IO as IO
 
@@ -114,11 +114,11 @@ stickybeak = do
   if not (recursive args)
      then do
        wd <- subscribe inotify jobMap (target args) (command args)
-       exitLoop (removeWatch wd >> exitSuccess)
+       exitLoop (removeWatch wd >> killINotify inotify >> exitSuccess)
      else do
        fs  <- subdirectories (target args)
        wds <- traverse (\fn -> subscribe inotify jobMap fn (command args)) fs
-       exitLoop (traverse removeWatch wds >> exitSuccess)
+       exitLoop (traverse removeWatch wds >> killINotify inotify >> exitSuccess)
   where exitLoop cleanup =
           let check = \s -> if s == 'q' then cleanup else return ()
            in forever (getChar >>= check)
