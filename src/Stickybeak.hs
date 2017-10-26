@@ -21,6 +21,7 @@ import           System.INotify         (EventVariety (..), INotify,
                                          WatchDescriptor, addWatch, initINotify,
                                          removeWatch)
 import           System.Process         (ProcessHandle, spawnCommand)
+import qualified System.IO as IO
 
 data Job = Job ProcessHandle UTCTime
 
@@ -104,6 +105,9 @@ subdirectories dir = do
 
 stickybeak :: IO ()
 stickybeak = do
+  IO.hSetBuffering IO.stdout IO.LineBuffering
+  IO.hSetBuffering IO.stderr IO.LineBuffering
+  IO.hSetBuffering IO.stdin  IO.NoBuffering
   args <- execParser progInfo
   jobMap <- STM.atomically $ STM.newTMVar Map.empty
   inotify <- initINotify
@@ -116,5 +120,5 @@ stickybeak = do
        wds <- traverse (\fn -> subscribe inotify jobMap fn (command args)) fs
        exitLoop (traverse removeWatch wds >> exitSuccess)
   where exitLoop cleanup =
-          let check = \s -> if s == "q" then cleanup else return ()
-           in forever (getLine >>= check)
+          let check = \s -> if s == 'q' then cleanup else return ()
+           in forever (getChar >>= check)
