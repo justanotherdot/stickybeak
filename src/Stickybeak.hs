@@ -3,8 +3,9 @@ module Stickybeak
   , subdirectories
   ) where
 
-{- import           Control.Concurrent.Async -}
-import           Control.Concurrent.STM
+import           Control.Concurrent.STM (TMVar)
+import qualified Control.Concurrent.STM as STM
+import           Control.Monad          (forever)
 import           Data.Map.Strict        (Map)
 import qualified Data.Map.Strict        as Map
 import           Data.Semigroup         ((<>))
@@ -20,6 +21,7 @@ import           System.INotify         (EventVariety (..), INotify,
                                          WatchDescriptor, addWatch, initINotify,
                                          removeWatch)
 import           System.Process         (ProcessHandle, spawnCommand)
+import qualified System.IO as IO
 
 data Job = Job ProcessHandle UTCTime
 
@@ -65,16 +67,16 @@ subscribe inotify jobMap tgt cmd = addWatch inotify [CloseWrite] tgt eventHandle
   where
     eventHandler _ = do
       ts <- getCurrentTime
-      (jm, needsUpdate) <- atomically $ do
-        jm' <- takeTMVar jobMap
+      (jm, needsUpdate) <- STM.atomically $ do
+        jm' <- STM.takeTMVar jobMap
         case Map.lookup cmd jm' of
           Nothing          -> return (jm', True)
           Just (Job _ ts') -> return (jm', diffUTCTime ts ts' > defaultDebounce)
       if needsUpdate
          then do
            ph <- spawnCommand cmd
-           atomically $ putTMVar jobMap $ Map.insert cmd (Job ph ts) jm
-         else atomically $ putTMVar jobMap jm
+           STM.atomically $ STM.putTMVar jobMap $ Map.insert cmd (Job ph ts) jm
+         else STM.atomically $ STM.putTMVar jobMap jm
 
 -- | Get all the subdirectories of a given directory.
 --
@@ -103,18 +105,20 @@ subdirectories dir = do
 
 stickybeak :: IO ()
 stickybeak = do
+  IO.hSetBuffering IO.stdout IO.LineBuffering
+  IO.hSetBuffering IO.stderr IO.LineBuffering
+  IO.hSetBuffering IO.stdin  IO.NoBuffering
   args <- execParser progInfo
-  jobMap <- atomically $ newTMVar Map.empty
+  jobMap <- STM.atomically $ STM.newTMVar Map.empty
   inotify <- initINotify
   if not (recursive args)
      then do
        wd <- subscribe inotify jobMap (target args) (command args)
-       _ <- getLine
-       removeWatch wd
-       exitSuccess
+       exitLoop (removeWatch wd >> exitSuccess)
      else do
        fs  <- subdirectories (target args)
        wds <- traverse (\fn -> subscribe inotify jobMap fn (command args)) fs
-       _ <- getLine
-       _ <- traverse removeWatch wds
-       exitSuccess
+       exitLoop (traverse removeWatch wds >> exitSuccess)
+  where exitLoop cleanup =
+          let check = \s -> if s == 'q' then cleanup else return ()
+           in forever (getChar >>= check)
