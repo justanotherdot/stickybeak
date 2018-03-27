@@ -3,23 +3,18 @@ module Stickybeak
   , subdirectories
   ) where
 
+-- TODO clean up this import list appropriately.
 import           Control.Concurrent.STM (TMVar)
 import qualified Control.Concurrent.STM as STM
 import           Control.Monad          (forever)
 import           Data.Map.Strict        (Map)
 import qualified Data.Map.Strict        as Map
 import           Data.Semigroup         ((<>))
-import           Data.Time              (UTCTime (..), diffUTCTime,
-                                         getCurrentTime)
-import           Options.Applicative    (Parser, ParserInfo (..), argument,
-                                         execParser, fullDesc, header, help,
-                                         helper, info, long, metavar, progDesc,
-                                         short, str, switch, (<**>))
+import           Data.Time              (UTCTime (..), diffUTCTime, getCurrentTime)
+import           Options.Applicative    (Parser, ParserInfo (..), argument, execParser, fullDesc, header, help, helper, info, long, metavar, progDesc, short, str, switch, (<**>))
 import           System.Directory       (doesDirectoryExist, listDirectory)
 import           System.Exit            (exitSuccess)
-import           System.INotify         (EventVariety (..), INotify,
-                                         WatchDescriptor, addWatch, initINotify,
-                                         removeWatch, killINotify)
+import           System.INotify         (EventVariety (..), INotify, WatchDescriptor, addWatch, initINotify, removeWatch, killINotify)
 import           System.Process         (ProcessHandle, spawnCommand)
 import qualified System.IO as IO
 
@@ -50,33 +45,46 @@ progArgs = Args
      <> help "Watch subdirectories recursively" )
 
 progInfo :: ParserInfo Args
-progInfo = info (progArgs <**> helper)
-              ( fullDesc
-             <> progDesc "Watch TARGET and run COMMAND on changes"
-             <> header "stickybeak" )
+progInfo = info
+            (progArgs <**> helper)
+            (fullDesc <>
+             progDesc "Watch TARGET and run COMMAND on changes" <>
+             header "stickybeak")
 
 defaultDebounce :: RealFrac a => a
 defaultDebounce = 0.250
 
-subscribe :: INotify
-          -> TMVar JobMap
-          -> String -- target
-          -> String -- command
-          -> IO WatchDescriptor
-subscribe inotify jobMap tgt cmd = addWatch inotify [CloseWrite] tgt eventHandler
+subscribe ::
+  INotify ->
+  TMVar JobMap ->
+  String -> -- target
+  String -> -- command
+  IO WatchDescriptor
+subscribe inotify jmRef tgt cmd =
+    addWatch inotify [CloseWrite] tgt eventHandler
   where
     eventHandler _ = do
       ts <- getCurrentTime
-      (jm, needsUpdate) <- STM.atomically $ do
-        jm' <- STM.takeTMVar jobMap
-        case Map.lookup cmd jm' of
-          Nothing          -> return (jm', True)
-          Just (Job _ ts') -> return (jm', diffUTCTime ts ts' > defaultDebounce)
-      if needsUpdate
+      (jm, updateReq) <-
+        STM.atomically $ do
+          jm <- STM.takeTMVar jmRef
+          case Map.lookup cmd jm of
+            Nothing          ->
+              pure (jm, True)
+            Just (Job _ ts') ->
+              let
+                -- TODO Could try to check `getProcessExitCode`
+                updateReq =
+                  diffUTCTime ts ts' > defaultDebounce
+              in
+                pure (jm, updateReq)
+      if updateReq
          then do
            ph <- spawnCommand cmd
-           STM.atomically $ STM.putTMVar jobMap $ Map.insert cmd (Job ph ts) jm
-         else STM.atomically $ STM.putTMVar jobMap jm
+           STM.atomically $
+            STM.putTMVar jmRef (Map.insert cmd (Job ph ts) jm)
+         else
+           STM.atomically $ STM.putTMVar jmRef jm
 
 -- | Get all the subdirectories of a given directory.
 --
@@ -84,24 +92,27 @@ subscribe inotify jobMap tgt cmd = addWatch inotify [CloseWrite] tgt eventHandle
 -- but will allow passing "." as an initial arg.
 subdirectories :: FilePath -> IO [FilePath]
 subdirectories dir = do
-    isDir <- doesDirectoryExist dir
-    if isDir
-       then do
-         fs   <- (prefixDir . filter isHidden) <$> listDirectory dir
-         dirs <- concat <$> traverse subdirectories fs
-         return $ dir : dirs
-       else
-         return []
-  where prefixDir = map (\fn -> dir <> "/" <> fn)
+  isDir <- doesDirectoryExist dir
+  if isDir
+     then do
+       fs   <- (prefixDir . filter isHidden) <$> listDirectory dir
+       dirs <- concat <$> traverse subdirectories fs
+       pure $ dir : dirs
+     else
+       pure []
+  where
+    prefixDir =
+      map (\fn -> dir <> "/" <> fn)
 
-        head' xs
-          | null xs   = Nothing
-          | otherwise = let (x:_) = xs
-                         in Just x
+    head' xs
+      | null xs   = Nothing
+      | otherwise = let (x:_) = xs
+                     in Just x
 
-        isHidden fn = case head' fn of
-                       Just c  -> c /= '.'
-                       Nothing -> False
+    isHidden fn =
+      case head' fn of
+        Just c  -> c /= '.'
+        Nothing -> False
 
 stickybeak :: IO ()
 stickybeak = do
@@ -119,6 +130,7 @@ stickybeak = do
        fs  <- subdirectories (target args)
        wds <- traverse (\fn -> subscribe inotify jobMap fn (command args)) fs
        exitLoop (traverse removeWatch wds >> killINotify inotify >> exitSuccess)
-  where exitLoop cleanup =
-          let check = \s -> if s == 'q' then cleanup else return ()
-           in forever (getChar >>= check)
+  where
+    exitLoop cleanup =
+      let check = \s -> if s == 'q' then cleanup else pure ()
+       in forever (getChar >>= check)
