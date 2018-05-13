@@ -1,6 +1,6 @@
 module Main where
 
-import           Stickybeak
+--import           Stickybeak
 import           Test.QuickCheck
 
 prop_sanity :: Int -> Int -> Bool

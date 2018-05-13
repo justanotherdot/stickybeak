@@ -15,17 +15,18 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:     src
   exposed-modules:    Stickybeak
-  build-depends:      base >= 4.7 && < 5
-                    , async
-                    , containers
-                    , directory
-                    , hinotify
-                    , optparse-applicative
+  build-depends:      base == 4.9.1.0
+                    , async == 2.1.1
+                    , containers == 0.5.7.1
+                    , directory == 1.3.0.0
+                    , hinotify == 0.3.9
+                    , optparse-applicative == 0.13.2.0
                     , process
-                    , stm
-                    , text
-                    , time
-                    , unix
+                    , stm == 2.4.4.1
+                    , text == 1.2.2.1
+                    , time == 1.6.0.1
+                    , unix == 2.7.2.1
+                    , bytestring == 0.10.8.1
   default-language:    Haskell2010
   ghc-options:         -Wall -fwarn-tabs
 
